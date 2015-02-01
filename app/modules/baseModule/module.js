@@ -54,7 +54,7 @@ define(function(require) {
 
                     $.pnotify({
                         type: data.type || "error",
-                        title: "Controller Error",
+                        title: "Alert",
                         text: t
                     });
                     console.error(parentContext.getSettings().linuxCNCServer.vars.error.data());
