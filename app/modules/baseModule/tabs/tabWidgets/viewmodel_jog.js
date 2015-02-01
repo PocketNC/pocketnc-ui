@@ -49,8 +49,8 @@ define(function(require) {
         };
 
         self.linear_step_options     = [0, .1, .01, .001, .0001];
-        self.a_step_options = [0,  90, 5,   1,   .5,   .05];
-        self.b_step_options = [0,  360, 180, 90, 5,   1,   .5,   .05];
+        self.a_step_options = [0,  90, 5,   1,   .1,   .01];
+        self.b_step_options = [0,  360, 180, 90, 5,   1,   .1,   .01];
         self.last_linear_step = 0;
         self.last_a_step = 0;
         self.last_b_step = 0;
