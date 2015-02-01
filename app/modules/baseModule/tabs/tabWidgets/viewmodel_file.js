@@ -25,7 +25,7 @@ define(function(require) {
                 self.setMotionLineToSelected();
             } else if (key === 'goto_line' )
             {
-                self.updateDisplayLine(self.linuxCNCServer.vars.motion_line.data());
+                self.updateDisplayLine(self.linuxCNCServer.ui_motion_line());
             }
         }
 
@@ -65,7 +65,7 @@ define(function(require) {
                             "set_line": {
                                 name: nls.SetLine,
                                 disabled: function () {
-                                    return self.linuxCNCServer.RmtRunning() || (self.fileListTable.handsontable('getSelected')[0] === self.linuxCNCServer.vars.motion_line.data() );
+                                    return self.linuxCNCServer.RmtRunning() || (self.fileListTable.handsontable('getSelected')[0] === self.linuxCNCServer.ui_motion_line() );
                                 }
                             },
                             "goto_line": {
@@ -78,13 +78,13 @@ define(function(require) {
 
                 // monitor file contents
                 self.linuxCNCServer.vars.file_content.data.subscribe( self.updateData );
-                self.linuxCNCServer.vars.motion_line.data.subscribe( function(newval){ self.motionLineUpdateInProgress=true; self.updateDisplayLine(newval); self.motionLineUpdateInProgress=false; });
+                self.linuxCNCServer.ui_motion_line.subscribe( function(newval){ self.motionLineUpdateInProgress=true; self.updateDisplayLine(newval); self.motionLineUpdateInProgress=false; });
 
                 self.fileListTable.dblclick( function(){ self.setMotionLineToSelected(); } );
 
                 setTimeout( function() {
                     self.updateData(self.linuxCNCServer.vars.file_content.data());
-                    self.updateDisplayLine(self.linuxCNCServer.vars.motion_line.data());
+                    self.updateDisplayLine(self.linuxCNCServer.ui_motion_line());
                 },2);
 
             }
@@ -94,7 +94,7 @@ define(function(require) {
         this.setMotionLineToSelected = function()
         {
             if (!self.linuxCNCServer.RmtRunning())
-                self.linuxCNCServer.vars.motion_line.data(self.fileListTable.handsontable('getSelected')[0]);
+                self.linuxCNCServer.ui_motion_line(self.fileListTable.handsontable('getSelected')[0]);
 
         }
 

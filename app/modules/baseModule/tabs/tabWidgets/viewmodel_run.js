@@ -40,7 +40,7 @@ define(function(require) {
             if (self.singleStep())
                 self.linuxCNCServer.runStep();
             else
-                self.linuxCNCServer.runFrom(self.linuxCNCServer.vars.motion_line.data())
+                self.linuxCNCServer.runFrom(self.linuxCNCServer.ui_motion_line())
         };
 
         self.setOptionalStop = function()

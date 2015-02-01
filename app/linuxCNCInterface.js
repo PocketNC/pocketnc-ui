@@ -225,6 +225,20 @@ define(function (require) {
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
 
+    lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
+                                               // we'll use ui_motion_line in all the component that would otherwise use motion_line and 
+                                               // populate it ourselves with the best value
+    lcncsvr.vars.settings.data.subscribe(function (newval) {
+        if(lcncsvr.vars.interp_state.data() != 1) {
+            lcncsvr.ui_motion_line(newval[0]);
+        }
+    });
+    lcncsvr.vars.motion_line.data.subscribe(function (newval) {
+        if(lcncsvr.vars.interp_state.data() == 1) {
+            lcncsvr.ui_motion_line(newval);
+        }
+    });
+
     lcncsvr.settings = ko.observable({});
 
     lcncsvr.vars.axis_mask = { data: ko.observable(0), watched: true };
@@ -1112,6 +1126,10 @@ define(function (require) {
 //                    if(data.id !== "a" && data.id !== "HB") {
 //                        console.log(data);
 //                    }
+//                    if(["id", "command", "current_line","motion_line", "read_line","settings"].includes(data.id)) {
+//                        console.log(data.id, data.data);
+//                    }
+
 
 
                     if (data.id == "a")
