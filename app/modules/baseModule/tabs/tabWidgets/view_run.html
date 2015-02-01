@@ -41,6 +41,20 @@
 
                         <td style="width:110px;">
                             <div class="sliders-vertical">
+                                <span id="run_maxvel_slider" class="slider-primary" data-bind="css: {'slider-primary': true}"></span>
+                            </div>
+                            <div>
+                                <p><h5>{{nls.MaxVelLine1}}<br>{{nls.MaxVelLine2}}</h5></p>
+                                <p><span><span data-bind="text: maxVelText"></span> <span data-bind="text: unit">in</span>/min </span><button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.setMaxVel(1)}"><i class="icon-refresh"></i></button></p>
+                                <p>
+                                <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementMaxVel(1/60)} " type="button"><i class="icon-arrow-up"></i></button>
+                                <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementMaxVel(-1/60)} " type="button"><i class="icon-arrow-down"></i></button>
+                                </p>
+                            </div>
+                        </td>
+
+                        <td style="width:110px;">
+                            <div class="sliders-vertical">
                                 <span id="run_feed_rate_slider" class="slider-primary" data-bind="css: {'slider-primary': linuxCNCServer.vars.feedrate.data() <= 1, 'slider-warning': linuxCNCServer.vars.feedrate.data() > 1 }"></span>
                             </div>
                             <div>

@@ -41,6 +41,8 @@ define({
         "Stop": "Stop",
         "OptionalStop": "Optional Stop",
         "SingleStep": "Single Step",
+        "MaxVelLine1" : "Max",
+        "MaxVelLine2" : "Velocity",
         "FeedRateLine1" : "Feed",
         "FeedRateLine2" : "Rate",
         "SpindleRateLine1" : "Spindle",

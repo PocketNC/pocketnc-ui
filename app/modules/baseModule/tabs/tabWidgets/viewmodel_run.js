@@ -31,6 +31,7 @@ define(function(require) {
 
                 utils.JQVSlider( $( "#run_spindle_rate_slider", self.Panel.getJQueryElement() ), self.linuxCNCServer.vars.spindlerate.data, 0, 2, 0.01, function(event,ui){ self.linuxCNCServer.setSpindleOverride(ui.value); } );
                 utils.JQVSlider( $( "#run_feed_rate_slider", self.Panel.getJQueryElement() ), self.linuxCNCServer.vars.feedrate.data, 0, 2, 0.01, function(event,ui){ self.linuxCNCServer.setFeedrate(ui.value); } );
+                utils.JQVSlider( $( "#run_maxvel_slider", self.Panel.getJQueryElement() ), self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data, 0, 1, 0.01, function(event,ui){ self.linuxCNCServer.setMaxVel(ui.value); } );
             }
 		};
 
@@ -67,6 +68,20 @@ define(function(require) {
 
         self.feedRateText = ko.computed( function() {
             return (self.linuxCNCServer.vars.feedrate.data() * 100).toFixed(0);
+        });
+
+        self.maxVelText = ko.computed( function() {
+            return lcncsvr.MachineUnitsToDisplayUnitsLinear(parseFloat(self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data())*60).toFixed(0);
+        });
+
+        self.unit = ko.computed(function() {
+            switch(lcncsvr.MachineUnitsToDisplayUnitsLinearScaleFactor()) {
+                case 25.4:
+                    return "mm";
+                case 2.54:
+                    return "cm";
+            }
+            return "in";
         });
 
 	};

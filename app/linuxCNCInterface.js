@@ -54,6 +54,7 @@ define(function (require) {
     lcncsvr.vars.client_config = { data: ko.observable({invalid:true}), watched: true, convert_to_json: true };
     lcncsvr.vars.linear_units = { data: ko.observable(1), watched: true };
     lcncsvr.vars.program_units = { data: ko.observable(0), watched: true };
+    lcncsvr.vars["halpin_halui.max-velocity.value"] = { data: ko.observable("10"), watched: true };
 
     lcncsvr.isClientConfigValid = function()
     {
@@ -573,6 +574,21 @@ define(function (require) {
         return;
     }
 
+    lcncsvr.setMaxVel = function(rate) {
+        if (!$.isNumeric(rate))
+            return;
+        if (rate < 0)
+            rate = 0;
+        lcncsvr.sendCommand("set_maxvel","maxvel", [rate.toString()] );
+        return;
+    }
+    lcncsvr.incrementMaxVel = function(delta) {
+        if (!$.isNumeric(delta))
+            return;
+        lcncsvr.sendCommand("set_maxvel","maxvel", [parseFloat(lcncsvr.vars["halpin_halui.max-velocity.value"].data()) + delta] );
+        return;
+    }
+
     lcncsvr.incrementFeedrate = function( delta )
     {
         if (!$.isNumeric(delta))
@@ -926,6 +942,14 @@ define(function (require) {
     lcncsvr.setVersion = function(version) {
         lcncsvr.SettingVersion(true);
         lcncsvr.sendCommandWhenReady("set_version", "set_version", [ version ]);
+    }
+
+    lcncsvr.getINIConfig = function() {
+        lcncsvr.socket.send(JSON.stringify({"id": "ini_config", "command": "get", "name": "config" }));
+    }
+
+    lcncsvr.getINIConfigParameter = function(section, parameter) {
+        lcncsvr.socket.send(JSON.stringify({"id": "ini_config_parameter", "command": "get", "name": "config_item", "section": section, "parameter": parameter }));
     }
 
     lcncsvr.setClientConfig = function( key, value )
