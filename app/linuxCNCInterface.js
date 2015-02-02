@@ -44,7 +44,7 @@ define(function (require) {
     lcncsvr.server_open = ko.observable(false);
     lcncsvr.server_logged_in = ko.observable(false);
     lcncsvr.serverReconnectCheckInterval = 2000;
-    lcncsvr.serverReconnectHBTimeoutInterval = 5000;
+    lcncsvr.serverReconnectHBTimeoutInterval = 30000;
 
     lcncsvr.jog_step = ko.observable(0.001);
     lcncsvr.jog_speed_fast = ko.observable(1);
