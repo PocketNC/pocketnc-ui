@@ -1,0 +1,29 @@
+<!-- Title bar -->
+<div class="navbar navbar-inverse navbar-fixed-top" id="nav_top">
+    <div class="navbar-inner">
+        <div class="container-fluid">
+            <!--<button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">-->
+                <!--<span class="icon-bar"></span>-->
+                <!--<span class="icon-bar"></span>-->
+                <!--<span class="icon-bar"></span>-->
+            <!--</button>-->
+            <a class="brand" href="http://www.pocketnc.com" target="_blank">{{nls.appTitle}}</a>
+            <div class="nav-collapseX collapseX">
+
+                <div class="navbar-form pull-right">
+                    <button class="btn" data-bind="click: linuxCNCServer.toggleEstop, css : { 'btn-danger' : linuxCNCServer.estop_inverse } ">{{nls.estop}}</button>
+                    &nbsp;
+                    <button class="btn btn-warning" data-bind="click: linuxCNCServer.togglePower, css : { 'btn-warning' : linuxCNCServer.power_is_on }, enable: linuxCNCServer.estop_inverse ">{{nls.power}}</button>
+                    <button class="btn btn-warning" data-bind="click: linuxCNCServer.stop, enable: linuxCNCServer.power_is_on, css : { 'btn-warning' : linuxCNCServer.power_is_on }">{{nls.abort}}</button>
+                </div>
+
+                <ul class="nav">
+                    <li data-bind="css: {'active' : activeTab0}, click: function(){tabChange(0); return true;}"><a href="#"><i class="icon-filter"></i> {{nls.run}}</a></li>
+                    <li data-bind="css: {'active' : activeTab1}, click: function(){tabChange(1); return true;}"><a href="#1"><i class="icon-play-circle"></i> {{nls.tooling}}</a></li>
+                    <li data-bind="css: {'active' : activeTab2}, click: function(){tabChange(2); return true;}"><a href="#2"><i class="icon-cogs"></i> {{nls.config}}</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </div>
+</div>
+

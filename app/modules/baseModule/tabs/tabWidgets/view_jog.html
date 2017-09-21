@@ -1,0 +1,28 @@
+<div class="well well-with-label">
+
+    <span class="well-label"><abbr title="{{nls.JogTitle}}">{{nls.JogTitle}}</abbr></span>
+
+<div class="btn-group" role="group" aria-label="{{nls.JogAxesLabel}}" data-bind="foreach:linuxCNCServer.AxesNumbers">
+<button type="button" class="btn btn-default" data-bind="text: ($root.linuxCNCServer.axisNames)[$data], css:{ 'btn-primary': $data == $root.selected_axis(), 'btn-default': $data != $root.selected_axis()}, click: $root.selectAxis"></button>
+</div>
+
+<button class="btn btn-default" data-bind="event: { mousedown: $root.minus_pressed, touchstart: $root.minus_pressed, mouseup: $root.minus_released, touchend: $root.minus_released }">-</button>
+
+<button class="btn btn-default" data-bind="event: { mousedown: plus_pressed, touchstart: plus_pressed, mouseup: plus_released, touchend: plus_released }">+</button>
+
+<span class="dropdown">
+<span>
+    <button class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-bind="text: step_label">Continuous</button>
+    <ul class="dropdown-menu" aria-label="dropdownMenu" data-bind="foreach:all_step_options">
+        <li><a class="dropdown-item" href="#" data-bind="text: $root.stepOptionLabel($data), click: $root.selectStep">Continuous</a></li>
+    </ul>
+    </span>
+</span>
+<br/>
+
+<label for="jog_with_mousewheel_cb"><h5>{{nls.JogWithMouseWheel}}:</h5></label>
+<span id="jog_with_mousewheel" class="switch" data-on="success" data-off="primary" data-bind="event: { 'switch-change': toggleMouseWheel }">
+<input id="jog_with_mousewheel_cb" type="checkbox"/></span>
+<br/>
+<br/>
+</div>
