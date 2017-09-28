@@ -292,15 +292,15 @@
                     <div class="control-group">
                         <label class="control-label" for="version">{{nls.VersionLabel}}</label>
                         <div class="controls">
-                            <select data-bind="options: linuxCNCServer.vars.versions.data(), value: linuxCNCServer.vars.current_version.data()" class="" id="version" multiple="false">
+                            <select data-bind="options: linuxCNCServer.vars.versions.data, value: getVersion" class="" id="version" multiple="false">
                             </select>
                         </div>
                     </div>
 
                     <div class="control-group">
                         <div class="controls">
-                            <button class="btn" data-bind="click: function() { alert('checking for updates! (but not really)') }">{{nls.CheckForUpdates}}</button>
-                            <button class="btn" data-bind="click: function() { alert('saved! (but not really)') }">{{nls.Save}}</button>
+                            <button class="btn" data-bind="click: function() { linuxCNCServer.check_for_updates() }">{{nls.CheckForUpdates}}</button>
+                            <button class="btn" data-bind="click: function() { saveVersion() }">{{nls.Save}}</button>
                         </div>
                     </div>
 

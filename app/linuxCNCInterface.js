@@ -230,7 +230,7 @@ define(function (require) {
     lcncsvr.vars.file.data.subscribe( function(newval){ if(newval) lcncsvr.requestFileContent() });
 
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
-    lcncsvr.vars.current_version = { data: ko.observable(""), watched: false };
+    lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
 
     lcncsvr.server_logged_in.subscribe( function(newval) {
         if (!newval)
@@ -912,6 +912,14 @@ define(function (require) {
         lcncsvr.sendCommand("clear_error","clear_error",[]);
     }
 
+    lcncsvr.check_for_updates = function() {
+        lcncsvr.sendCommandWhenReady("check_for_updates", "check_for_updates");
+    }
+
+    lcncsvr.setVersion = function(version) {
+        lcncsvr.sendCommandWhenReady("set_version", "set_version", [ version ]);
+    }
+
     lcncsvr.setClientConfig = function( key, value )
     {
         lcncsvr.sendCommandWhenReady("cc","save_client_config",[key,value]);
@@ -1055,8 +1063,6 @@ define(function (require) {
             lcncsvr.socket.onmessage = function (msg) {
                 try {
                     var data = JSON.parse(msg.data);
-
-//                    console.log(data);
 
                     if (data.code != "?OK") {
                         console.debug("WEBSOCKET: ERROR code returned " + msg.data);

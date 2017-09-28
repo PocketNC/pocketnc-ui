@@ -140,6 +140,19 @@ define(function(require) {
             self.settings.persist.BPShowGrid.Scratch( $( '#config_bpgrid_toggle', self.Panel.getJQueryElement() ).bootstrapSwitch('status') ? true : false );
         }
 
+        this.getVersion = ko.computed( {
+            read: function() {
+                return self.linuxCNCServer.vars.current_version.data.Scratch();
+            },
+            write: function(newval) {
+                self.linuxCNCServer.vars.current_version.data.Scratch(newval);
+            }
+        });
+
+        this.saveVersion = function() {
+            self.linuxCNCServer.setVersion(self.linuxCNCServer.vars.current_version.data.Scratch());
+        };
+
         this.getDisplayUnitValue = ko.computed(
         {
             read: function() {
