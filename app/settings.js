@@ -40,11 +40,14 @@ define(['/app/linuxCNCInterface.js', '/app/core/helpers/utility.js'], function(l
         }
     }
     settings.updatePersistentSettings = function(clientConfig) {
-        _serverUpdating = true;
-        _.pairs(clientConfig).forEach( function(keyval) {
-            settings.addPersistentSetting(keyval[0],keyval[1]);
-        } );
-        _serverUpdating = false;
+        if(!clientConfig.invalid) {
+            _serverUpdating = true;
+            _.pairs(clientConfig).forEach( function(keyval) {
+                console.log(keyval);
+                settings.addPersistentSetting(keyval[0],keyval[1]);
+            } );
+            _serverUpdating = false;
+        }
     }
 
     // set persistent defaults
