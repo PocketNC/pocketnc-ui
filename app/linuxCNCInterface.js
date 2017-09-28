@@ -1084,6 +1084,9 @@ define(function (require) {
 
                     var curID = data.id.split(":");
 
+                    if(data.id === "refresh_ui") {
+			window.location.reload(true);
+                    }
                     if (lcncsvr.vars.hasOwnProperty(curID[0])) {
                         if (lcncsvr.vars[curID[0]].indexed)
                         {
