@@ -876,7 +876,6 @@ define(function (require) {
     lcncsvr.setToolTableFull = function( toolnum, zofs, xofs, diam, front, back, orient )
     {
         try {
-            console.log(toolnum, zofs, xofs, diam, front, back, orient);
             if(!lcncsvr.mdi("G10 L1 P" + toolnum + " Z" + zofs + " X" + xofs + " R" + (parseFloat(diam)/2).toFixed(5) + " I" + front + " J" + back + " Q" + orient )) {
                 console.log("failed to send set tool table mdi command");
             }
@@ -1069,6 +1068,19 @@ define(function (require) {
                         return;
                     }
 
+                    if(data.id == "HB" && lcncsvr.refreshOnNextHB) {
+                        console.log("reloading...");
+                        window.location.reload(true);
+                    }
+                    if(data.id == "set_version") {
+                        console.log("we need to reload once we detect the server has reestablished a connection...");
+			lcncsvr.needsRefresh = true;
+                    }
+//                    if(data.id !== "a" && data.id !== "HB") {
+//                        console.log(data);
+//                    }
+
+
                     if (data.id == "a")
                     {
                         lcncsvr.updateActualPosition(data.data);
@@ -1109,6 +1121,10 @@ define(function (require) {
             }
 
             lcncsvr.socket.onclose = function () {
+                if(lcncsvr.needsRefresh) {
+                    console.log("lost connection with server... refresh on next successful HB");
+                    lcncsvr.refreshOnNextHB = true;
+                }
                 lcncsvr.server_open(false);
                 lcncsvr.server_logged_in(false);
             }

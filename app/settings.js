@@ -43,7 +43,6 @@ define(['/app/linuxCNCInterface.js', '/app/core/helpers/utility.js'], function(l
         if(!clientConfig.invalid) {
             _serverUpdating = true;
             _.pairs(clientConfig).forEach( function(keyval) {
-                console.log(keyval);
                 settings.addPersistentSetting(keyval[0],keyval[1]);
             } );
             _serverUpdating = false;
