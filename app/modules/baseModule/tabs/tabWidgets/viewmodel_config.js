@@ -151,6 +151,8 @@ define(function(require) {
 
         this.saveVersion = function() {
             self.linuxCNCServer.setVersion(self.linuxCNCServer.vars.current_version.data.Scratch());
+            document.getElementById("saving_version").innerHTML = '<i class="icon icon-spinner icon-spin"></i>';
+            document.getElementById("saving_version_button").disabled = true;
         };
 
         this.getDisplayUnitValue = ko.computed(

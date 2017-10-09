@@ -300,7 +300,7 @@
                     <div class="control-group">
                         <div class="controls">
                             <button class="btn" data-bind="click: function() { linuxCNCServer.check_for_updates() }">{{nls.CheckForUpdates}}</button>
-                            <button class="btn" data-bind="click: function() { saveVersion() }">{{nls.Save}}</button>
+                            <button id="saving_version_button" class="btn" data-bind="click: function() { saveVersion() }">{{nls.Save}}</button> <span id="saving_version"></span>
                         </div>
                     </div>
 
