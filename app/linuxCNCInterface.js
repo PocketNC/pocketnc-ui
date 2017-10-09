@@ -67,6 +67,9 @@ define(function (require) {
     lcncsvr.DisplayPrecision = ko.computed(function(){ if (lcncsvr.DisplayUnitsPerMM() >= 1) return 3; return 4; });
     lcncsvr.ChangeDisplayUnitsToProgramUnits = ko.observable(false);
 
+    lcncsvr.CheckingForUpdates = ko.observable(false);
+    lcncsvr.SettingVersion = ko.observable(false);
+
     lcncsvr.vars.program_units.data.subscribe( function(newvalue) {
         if (lcncsvr.ChangeDisplayUnitsToProgramUnits())
         {
@@ -231,6 +234,10 @@ define(function (require) {
 
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
+
+    lcncsvr.vars.versions.data.subscribe( function(newval) {
+        lcncsvr.CheckingForUpdates(false);
+    });
 
     lcncsvr.server_logged_in.subscribe( function(newval) {
         if (!newval)
@@ -912,10 +919,12 @@ define(function (require) {
     }
 
     lcncsvr.check_for_updates = function() {
+        lcncsvr.CheckingForUpdates(true);
         lcncsvr.sendCommandWhenReady("check_for_updates", "check_for_updates");
     }
 
     lcncsvr.setVersion = function(version) {
+        lcncsvr.SettingVersion(true);
         lcncsvr.sendCommandWhenReady("set_version", "set_version", [ version ]);
     }
 
