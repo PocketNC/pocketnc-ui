@@ -43,7 +43,8 @@ define(function(require) {
                 try  {
                 if (parentContext.getSettings().linuxCNCServer.vars.error.data().text.length > 0)
                 {
-                    var t = parentContext.getSettings().linuxCNCServer.vars.error.data().text;
+                    var data = parentContext.getSettings().linuxCNCServer.vars.error.data();
+                    var t = data.text;
 
                     t = t.replace("joint 0", "X Axis");
                     t = t.replace("joint 1", "Y Axis");
@@ -52,7 +53,7 @@ define(function(require) {
                     t = t.replace("joint 4", "B Axis");
 
                     $.pnotify({
-                        type: "error",
+                        type: data.type || "error",
                         title: "Controller Error",
                         text: t
                     });
