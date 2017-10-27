@@ -70,7 +70,7 @@
                             <ul class="dropdown-menu" data-bind="foreach: settings.persist.MDIHistory">
                                 <li><a data-bind="text: $data, click: $root.currentMDITextSetAndFocus.bind($data)"></a></li>
                             </ul>
-                            <input type="text" data-bind="value: currentMDIText, event: {keyup: mdiInputKeyPress }" id="navBottomMDIInput">
+                            <input type="text" data-bind="value: currentMDIText, event: {keypress: mdiInputKeyPress }" id="navBottomMDIInput">
                             <button class="btn btn-primary" data-bind="click: function(){currentMDITextSetAndFocus('');} "><i class="icon-remove-sign"></i></button>
                         </div>
                     </div>

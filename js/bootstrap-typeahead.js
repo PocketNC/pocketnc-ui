@@ -109,22 +109,24 @@
         , val = li.attr('data-value')
         , text = li.find('.item-text').length > 0 ? li.find('.item-text').text() : li.text()
 
-      val = this.updater(val, 'value')
-      text = this.updater(text, 'text')
+      if(li.length > 0 && this.shown) {
+          val = this.updater(val, 'value')
+          text = this.updater(text, 'text')
 
-      this.$element
-        .val(text)
-        .attr('data-value', val)
-      
-      this.text = text
-      
-      if (typeof this.$target != 'undefined') {
-        this.$target
-          .val(val)
-          .trigger('change')
+          this.$element
+            .val(text)
+            .attr('data-value', val)
+          
+          this.text = text
+          
+          if (typeof this.$target != 'undefined') {
+            this.$target
+              .val(val)
+              .trigger('change')
+          }
+          
+          this.$element.trigger('change')
       }
-      
-      this.$element.trigger('change')
       
       return this.hide()
     }
@@ -309,7 +311,7 @@
         list.push(li[0])
       })
 
-// don't select the first one
+// commented out this line so we don't select the first one
 //      list.not('.dropdown-header').first().addClass('active')
       
       this.$menu.html(list)
