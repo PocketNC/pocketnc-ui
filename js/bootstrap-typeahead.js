@@ -309,7 +309,8 @@
         list.push(li[0])
       })
 
-      list.not('.dropdown-header').first().addClass('active')
+// don't select the first one
+//      list.not('.dropdown-header').first().addClass('active')
       
       this.$menu.html(list)
       
