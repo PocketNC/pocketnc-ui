@@ -8416,17 +8416,23 @@ var Handsontable = { //class namespace
         }
 
         $(instance.wtTable.TABLE).on('mousewheel', function (event, delta, deltaX, deltaY) {
-            if (deltaY > 0 && instance.getSetting('offsetRow') === 0) {
-                return; //attempt to scroll up when it's already showing first row
+            var doVerticalScroll = true;
+            var doHorizontalScroll = true;
+
+            if ( (deltaY > 0 && instance.getSetting('offsetRow') === 0) ||
+                 (deltaY < 0 && instance.wtTable.isLastRowFullyVisible())
+                ) {
+                doVerticalScroll = false;
             }
-            else if (deltaY < 0 && instance.wtTable.isLastRowFullyVisible()) {
-                return; //attempt to scroll down when it's already showing last row
+            if (
+                (deltaX < 0 && instance.getSetting('offsetColumn') === 0) ||
+                (deltaX > 0 && instance.wtTable.isLastColumnFullyVisible())
+                ) {
+                doHorizontalScroll = false;
             }
-            else if (deltaX < 0 && instance.getSetting('offsetColumn') === 0) {
-                return; //attempt to scroll left when it's already showing first column
-            }
-            else if (deltaX > 0 && instance.wtTable.isLastColumnFullyVisible()) {
-                return; //attempt to scroll right when it's already showing last column
+
+            if(!doHorizontalScroll && !doVerticalScroll) {
+                return;
             }
 
             //now we are sure we really want to scroll
@@ -8436,7 +8442,11 @@ var Handsontable = { //class namespace
                     //ceil is needed because jquery-mousewheel reports fractional mousewheel deltas on touchpad scroll
                     //see http://stackoverflow.com/questions/5527601/normalizing-mousewheel-speed-across-browsers
                     if (instance.wtScrollbars.vertical.visible) { // if we see scrollbar
-                        instance.scrollVertical(-Math.ceil(deltaY)).draw();
+                        if(deltaY < 0) {
+                            instance.scrollVertical(Math.ceil(-deltaY)).draw();
+                        } else {
+                            instance.scrollVertical(-Math.ceil(deltaY)).draw();
+                        }
                     }
                 }
                 else if (deltaX) {
@@ -9121,7 +9131,7 @@ var Handsontable = { //class namespace
             setup: function() {
                 if ( this.addEventListener ) {
                     for ( var i=types.length; i; ) {
-                        this.addEventListener( types[--i], handler, false );
+                        this.addEventListener( types[--i], handler, { passive: false } );
                     }
                 } else {
                     this.onmousewheel = handler;
@@ -9131,7 +9141,7 @@ var Handsontable = { //class namespace
             teardown: function() {
                 if ( this.removeEventListener ) {
                     for ( var i=types.length; i; ) {
-                        this.removeEventListener( types[--i], handler, false );
+                        this.removeEventListener( types[--i], handler, { passive: false } );
                     }
                 } else {
                     this.onmousewheel = null;
