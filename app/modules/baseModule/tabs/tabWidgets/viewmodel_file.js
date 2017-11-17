@@ -42,7 +42,7 @@ define(function(require) {
                     data: data,
                     stretchH: "last",
                     rowHeaders: true,
-                    height: 254,
+                    height: 400,
                     startCols: 1,
                     outsideClickDeselects: false,
                     columns: [
