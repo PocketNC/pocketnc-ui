@@ -71,7 +71,9 @@ define(function(require) {
         });
 
         self.maxVelText = ko.computed( function() {
-            return lcncsvr.MachineUnitsToDisplayUnitsLinear(parseFloat(self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data())*60).toFixed(0);
+            var maxVel = parseFloat(self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data());
+            if(maxVel > 1) maxVel = 1;
+            return lcncsvr.MachineUnitsToDisplayUnitsLinear(maxVel*60).toFixed(0);
         });
 
         self.unit = ko.computed(function() {
