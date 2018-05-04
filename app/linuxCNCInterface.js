@@ -1091,7 +1091,11 @@ define(function (require) {
         lcncsvr.hbTimeout();
 
         try {
-            lcncsvr.socket = new WebSocket("ws://" + lcncsvr.server_address() + ":" + lcncsvr.server_port() + "/websocket/");
+            if(document.location.href.startsWith("https")) {
+              lcncsvr.socket = new WebSocket("wss://" + lcncsvr.server_address() + ":" + lcncsvr.server_port() + "/websocket/");
+            } else {
+              lcncsvr.socket = new WebSocket("ws://" + lcncsvr.server_address() + ":" + lcncsvr.server_port() + "/websocket/");
+            }
             /*
             var old_send = lcncsvr.socket.send;
             lcncsvr.socket.send = function() {
