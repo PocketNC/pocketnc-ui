@@ -913,7 +913,8 @@ define(function (require) {
     lcncsvr.setToolTableFull = function( toolnum, zofs, xofs, diam, front, back, orient )
     {
         try {
-            if(!lcncsvr.mdi("G10 L1 P" + toolnum + " Z" + zofs + " X" + xofs + " R" + (parseFloat(diam)/2).toFixed(5) + " I" + front + " J" + back + " Q" + orient )) {
+            var cmd = "G10 L1 P" + toolnum + " Z" + zofs + " X" + xofs + " R" + (parseFloat(diam)/2).toFixed(5) + " I" + front + " J" + back + " Q" + orient ;
+            if(!lcncsvr.mdi(cmd)) {
                 console.log("failed to send set tool table mdi command");
             }
         } catch (ex) {

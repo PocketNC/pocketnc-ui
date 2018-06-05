@@ -81,7 +81,7 @@ define(function(require) {
                                 else
                                 {
                                     var rowDat = ht.getDataAtRow(row);
-                                    self.linuxCNCServer.setToolTableFull( row+1,self.linuxCNCServer.DisplayUnitsToMachineUnits(rowDat[0]),0,self.linuxCNCServer.DisplayUnitsToMachineUnits(rowDat[1]),0,0,0);
+                                    self.linuxCNCServer.setToolTableFull( row+1,self.linuxCNCServer.DisplayUnitsToProgramUnits(rowDat[0]),0,self.linuxCNCServer.DisplayUnitsToProgramUnits(rowDat[1]),0,0,0);
                                     self.settings.persist.ToolTableDescriptions()[row] = rowDat[2];
                                     self.settings.persist.ToolTableDescriptions.valueHasMutated();
                                 }
