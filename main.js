@@ -6,9 +6,9 @@ require.config({
 	//Let's define short alias for commonly used AMD libraries and name-spaces. 
     paths : {
         // requirejs plugins in use
-        text : '../js/text',
-        i18n : '../js/i18n',
-        path : '../js/path',
+        text : './js/text',
+        i18n : './js/i18n',
+        path : './js/path',
         // namespace that aggregate core classes that are in frequent use
         Boiler : './app/core/_boiler_'
     }
