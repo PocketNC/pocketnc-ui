@@ -98,6 +98,8 @@ define(function(require) {
                     });
                 }
 
+                this.updateToolProbeColumn();
+
                 // monitor file contents
                 self.linuxCNCServer.vars.board_revision.data.subscribe( self.updateToolProbeColumn );
                 self.linuxCNCServer.vars.tool_table.data.subscribe( self.updateData );
@@ -128,7 +130,7 @@ define(function(require) {
 
 
             var boardRev = self.linuxCNCServer.vars.board_revision.data();
-            if(!boardRev.startsWith("v1")) {
+            if(boardRev && !boardRev.startsWith("v1")) {
                 var ht = self.toolListTable.handsontable('getInstance');
                 ht.updateSettings({
                     startCols: 4,
