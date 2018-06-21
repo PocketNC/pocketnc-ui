@@ -5,7 +5,7 @@ define(function(require) {
 
     var ViewModel = require('./viewmodel');
     var ViewModel_dro = require('../tabWidgets/viewmodel_dro');
-    var ViewModel_work = require('/app/modules/baseModule/tabs/tabWidgets/viewmodel_workOffsets.js');
+    var ViewModel_work = require('../tabWidgets/viewmodel_workOffsets.js');
     var ViewModel_tooling = require('../tabWidgets/viewmodel_tooling');
 
     var Component = function(moduleContext) {

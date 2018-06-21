@@ -2,7 +2,7 @@ define(function(require) {
 
     var template = require('text!./view_fileopen.html');
     var nls = require('i18n!./nls/resources');
-    var utils = require('/app/core/helpers/utility.js');
+    var utils = require('../../../../core/helpers/utility.js');
 
 	var ViewModel = function(moduleContext) {
 

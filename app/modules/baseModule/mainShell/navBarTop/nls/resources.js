@@ -1,6 +1,6 @@
 define({
     "root": {
-        "appTitle": "<img class='logo' src='/pocketnc.png'/>",
+        "appTitle": "<img class='logo' src='pocketnc.png'/>",
 
         "overview" : "Overview",
         "file": "File",

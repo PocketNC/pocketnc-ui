@@ -5,7 +5,7 @@
  * sub contexts. Note that sub contexts receive own 'copies' of global settings.
  * 
  */
-define(['/app/linuxCNCInterface.js', '/app/core/helpers/utility.js'], function(linuxcnc, utils ) {
+define(['./linuxCNCInterface.js', './core/helpers/utility.js'], function(linuxcnc, utils ) {
 
     var settings = {};
 
