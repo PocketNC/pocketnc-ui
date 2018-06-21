@@ -23,38 +23,22 @@ define(function(require) {
             if (_.isNull( self.panel ))
             {
                 self.panel = Panel;
-                var actionRenderer = function(instance, td, row, col, prop, value, cellProperties) {
-                    var b = document.createElement("button");
-                    b.className = "btn btn-default";
-                    b.style.width = "85%";
-                    b.innerHTML = "Measure Tool " + (row+1);
-
-                    td.innerHTML = "";
-                    td.appendChild(b);
-
-                    b.onclick = function() {
-                        console.log("here");
-                        self.linuxCNCServer.loadTool(row+1);
-                    };
-                }
-
                 // var data = self.linuxCNCServer.vars.file_content.data().split('\n');
                 var data = [[0,0,0, ""]];
 
                 self.toolListTable = $("#ToolListTable", self.panel.getJQueryElement());
-                self.toolListTable.handsontable({
-
+                var opts = {
                     stretchH: "all",
                     rowHeaders: true,
                     //colHeaders: ["Tool Number", "Z Offset", "X Offset", "Diameter", "Front Angle", "Back Angle", "Orientation"],
                     colHeaders: [ "Z Offset", "Diameter", "Description", "" ],
                     height: 255,
-                    startCols: 4,
+                    startCols: 3,
                     outsideClickDeselects: false,
                     columns: [ { data: 0 },
                                { data: 1 },
-                               { data: 2 },
-                               { data: "action", renderer: actionRenderer } ],
+                               { data: 2 }
+                                ],
 
                     afterChange: function(changes, source){
                         if (!_.isArray(changes))
@@ -90,7 +74,8 @@ define(function(require) {
                             };
                         })
                     }
-                });
+                };
+                self.toolListTable.handsontable(opts);
 
                 var ht = self.toolListTable.handsontable('getInstance');
                 if(self.linuxCNCServer.RmtManualInputAllowed() && self.linuxCNCServer.AllHomed()) {
@@ -114,6 +99,7 @@ define(function(require) {
                 }
 
                 // monitor file contents
+                self.linuxCNCServer.vars.board_revision.data.subscribe( self.updateToolProbeColumn );
                 self.linuxCNCServer.vars.tool_table.data.subscribe( self.updateData );
                 self.linuxCNCServer.RmtManualInputAllowed.subscribe(self.updateEditable);
                 self.linuxCNCServer.AllHomed.subscribe(self.updateEditable);
@@ -124,6 +110,36 @@ define(function(require) {
             },2);
 
 		};
+
+        this.updateToolProbeColumn = function() {
+            var actionRenderer = function(instance, td, row, col, prop, value, cellProperties) {
+                var b = document.createElement("button");
+                b.className = "btn btn-default";
+                b.style.width = "85%";
+                b.innerHTML = "Measure Tool " + (row+1);
+
+                td.innerHTML = "";
+                td.appendChild(b);
+
+                b.onclick = function() {
+                    self.linuxCNCServer.loadTool(row+1);
+                };
+            }
+
+
+            var boardRev = self.linuxCNCServer.vars.board_revision.data();
+            if(!boardRev.startsWith("v1")) {
+                var ht = self.toolListTable.handsontable('getInstance');
+                ht.updateSettings({
+                    startCols: 4,
+                    columns: [ { data: 0 },
+                               { data: 1 },
+                               { data: 2 },
+                               { data: "action", renderer: actionRenderer }
+                                ]
+                });
+            }
+        };
 
         this.updateEditable = function() { 
             var ht = self.toolListTable.handsontable('getInstance');
