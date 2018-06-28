@@ -122,16 +122,19 @@ define(function(require) {
         {
             var ht = self.fileListTable.handsontable('getInstance');
 
-            ht.selectCell(lineNum,0);
+            // if file component is visible
+            if(ht.rootElement[0].offsetParent) {
+                ht.selectCell(lineNum,0);
 
-            if (ht.countRows() > lineNum+4)
-            {
-                ht.view.scrollViewport({row: lineNum+4, col: 0});
-                ht.view.wt.draw(true); //these two lines are needed to fix scrolling viewport when cell dimensions are significantly bigger than assumed by Walkontable
-                ht.view.scrollViewport({row: lineNum+4, col: 0});
+                if (ht.countRows() > lineNum+4)
+                {
+                    ht.view.scrollViewport({row: lineNum+4, col: 0});
+                    ht.view.wt.draw(true); //these two lines are needed to fix scrolling viewport when cell dimensions are significantly bigger than assumed by Walkontable
+                    ht.view.scrollViewport({row: lineNum+4, col: 0});
+                }
+
+                $("#jog_focus_handler").focus();
             }
-
-            $("#jog_focus_handler").focus();
         }
 
 
