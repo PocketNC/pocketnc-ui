@@ -10,7 +10,7 @@ define({
     	"help": "Help",
     	"config": "Conf.",
 
-        "estop":"Shutdown",
+        "estop":"E-Stop",
         "power":"Power",
         "abort":"Stop"
     }

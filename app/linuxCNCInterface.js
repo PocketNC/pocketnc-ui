@@ -567,6 +567,10 @@ define(function (require) {
             return lcncsvr.pause();
     }
 
+    lcncsvr.shutdown_computer = function() {
+      lcncsvr.sendCommand("shutdown_computer","shutdown_computer");
+    }
+
     lcncsvr.stop = function()
     {
         lcncsvr.abort();

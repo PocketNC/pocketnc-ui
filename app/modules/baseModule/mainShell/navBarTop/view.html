@@ -13,8 +13,7 @@
                 <div class="navbar-form pull-right">
                     <button class="btn" data-bind="click: linuxCNCServer.toggleEstop, css : { 'btn-danger' : linuxCNCServer.estop_inverse } ">{{nls.estop}}</button>
                     &nbsp;
-                    <button class="btn btn-warning" data-bind="click: linuxCNCServer.togglePower, css : { 'btn-warning' : linuxCNCServer.power_is_on }, enable: linuxCNCServer.estop_inverse ">{{nls.power}}</button>
-                    <button class="btn btn-warning" data-bind="click: linuxCNCServer.stop, enable: linuxCNCServer.power_is_on, css : { 'btn-warning' : linuxCNCServer.power_is_on }">{{nls.abort}}</button>
+                    <button class="btn btn-danger" data-toggle="modal" data-target="#shutdownComputerModal" data-bind="click: function() { linuxCNCServer.estop( true ) }"><i class="icon-off icon-large"></i></button>
                 </div>
 
                 <ul class="nav">
@@ -27,3 +26,23 @@
     </div>
 </div>
 
+<div class="modal fade" id="shutdownComputerModal" tabindex="-1" role="dialog" aria-labelledby="shutdownComputerModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="shutdownComputerModalLabel">Power down Pocket NC?
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cancel">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        </h5>
+      </div>
+      <div class="modal-body">
+          Are you sure you want to completely power down the Pocket NC?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" data-dismiss="modal" data-bind="click: linuxCNCServer.shutdown_computer">Shutdown</button>
+      </div>
+    </div>
+  </div>
+</div>
