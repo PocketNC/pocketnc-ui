@@ -173,6 +173,7 @@ define(function(require) {
         });
 
         self.minus_pressed = function(data, event) {
+            self.minus_key_down = true;
             var multiplier = 1;
             if(self.selected_axis() > 2) {
                 multiplier = 180;
@@ -192,6 +193,7 @@ define(function(require) {
         };
 
         self.plus_pressed = function(data, event) {
+            self.plus_key_down = true;
             var multiplier = 1;
             if(self.selected_axis() > 2) {
                 multiplier = 180;
@@ -212,9 +214,13 @@ define(function(require) {
         };
 
         self.stopJoggingSelectedAxis = function(e) {
-          if(self.step() == 0) {
-            self.linuxCNCServer.jogStop(self.selected_axis());
-          } 
+          if(self.plus_key_down || self.minus_key_down) {
+            if(self.step() == 0) {
+              self.linuxCNCServer.jogStop(self.selected_axis());
+            } 
+            self.plus_key_down = false;
+            self.minus_key_down = false;
+          }
         };
 
         // Make sure we stop jogging if we slip off the +/- buttons
