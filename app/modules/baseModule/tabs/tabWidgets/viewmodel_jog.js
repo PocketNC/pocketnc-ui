@@ -143,6 +143,7 @@ define(function(require) {
             }
             event.preventDefault();
         };
+
         self.plus_pressed = function(data, event) {
             var multiplier = 1;
             if(self.selected_axis() > 2) {
@@ -155,12 +156,17 @@ define(function(require) {
             }
             event.preventDefault();
         };
+
         self.plus_released = function(data, event) {
             if(self.step() == 0) {
                 self.linuxCNCServer.jogStop(self.selected_axis());
             } 
             event.preventDefault();
         };
+
+        // Make sure we stop jogging if we slip off the +/- buttons
+        $(document).on("mouseup", self.minus_released);
+        $(document).on("mouseup", self.plus_released);
 
         this.getTemplate = function() {
             return template;

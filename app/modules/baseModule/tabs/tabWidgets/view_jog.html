@@ -6,9 +6,9 @@
 <button type="button" class="btn btn-default" data-bind="text: ($root.linuxCNCServer.axisNames)[$data], css:{ 'btn-primary': $data == $root.selected_axis(), 'btn-default': $data != $root.selected_axis()}, click: $root.selectAxis"></button>
 </div>
 
-<button class="btn btn-default" data-bind="event: { mousedown: $root.minus_pressed, touchstart: $root.minus_pressed, mouseup: $root.minus_released, touchend: $root.minus_released }">-</button>
+<button class="btn btn-default" data-bind="event: { mousedown: $root.minus_pressed, touchstart: $root.minus_pressed, touchend: $root.minus_released }">-</button>
 
-<button class="btn btn-default" data-bind="event: { mousedown: plus_pressed, touchstart: plus_pressed, mouseup: plus_released, touchend: plus_released }">+</button>
+<button class="btn btn-default" data-bind="event: { mousedown: plus_pressed, touchstart: plus_pressed, touchend: plus_released }">+</button>
 
 <span class="dropdown">
 <span>
