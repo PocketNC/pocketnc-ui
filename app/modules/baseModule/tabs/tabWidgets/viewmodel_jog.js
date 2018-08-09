@@ -56,6 +56,53 @@ define(function(require) {
         self.last_b_step = 0;
         self.step_multiplier = self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor();
         self.step = ko.observable(0);
+
+        self.nextStep = function() {
+          var axis = self.selected_axis();
+          var step = self.step();
+
+          var options = [];
+          switch(axis) {
+            case 0:
+            case 1:
+            case 2:
+              options = self.linear_step_options;
+              break;
+            case 3:
+              options = self.a_step_options;
+              break;
+            case 4:
+              options = self.b_step_options;
+              break;
+          }
+
+          var index = Math.min(options.length-1, options.indexOf(step)+1);
+          self.step(options[index]);
+        };
+
+        self.prevStep = function() {
+          var axis = self.selected_axis();
+          var step = self.step();
+
+          var options = [];
+          switch(axis) {
+            case 0:
+            case 1:
+            case 2:
+              options = self.linear_step_options;
+              break;
+            case 3:
+              options = self.a_step_options;
+              break;
+            case 4:
+              options = self.b_step_options;
+              break;
+          }
+
+          var index = Math.max(0, options.indexOf(step)-1);
+          self.step(options[index]);
+        };
+
         self.selectStep = function(step) {
             self.step(step);
             console.log(step);
@@ -164,9 +211,61 @@ define(function(require) {
             event.preventDefault();
         };
 
+        self.stopJoggingSelectedAxis = function(e) {
+          if(self.step() == 0) {
+            self.linuxCNCServer.jogStop(self.selected_axis());
+          } 
+        };
+
         // Make sure we stop jogging if we slip off the +/- buttons
-        $(document).on("mouseup", self.minus_released);
-        $(document).on("mouseup", self.plus_released);
+        $(document).on("mouseup", self.stopJoggingSelectedAxis);
+        $(document).on("mouseup", self.stopJoggingSelectedAxis);
+
+        // jogFocusElement is defined in navBarBottom
+        var jogFocusElement = $('#jog_focus_handler');
+
+        jogFocusElement.bind('keydown', '1', function(e) {
+          self.selectAxis(0);
+        });
+        jogFocusElement.bind('keydown', '2', function(e) {
+          self.selectAxis(1);
+        });
+        jogFocusElement.bind('keydown', '3', function(e) {
+          self.selectAxis(2);
+        });
+        jogFocusElement.bind('keydown', '4', function(e) {
+          self.selectAxis(3);
+        });
+        jogFocusElement.bind('keydown', '5', function(e) {
+          self.selectAxis(4);
+        });
+
+        jogFocusElement.on('keydown', function(e) {
+          switch(e.key) {
+            case '-':
+              self.minus_pressed(null, e);
+              break;
+            case '=':
+              self.plus_pressed(null, e);
+              break;
+            case '[':
+              self.prevStep();
+              break;
+            case ']':
+              self.nextStep();
+              break;
+          }
+        });
+        jogFocusElement.on('keyup', function(e) {
+          switch(e.key) {
+            case '-':
+              self.minus_released(null, e);
+              break;
+            case '=':
+              self.plus_released(null, e);
+              break;
+          }
+        });
 
         this.getTemplate = function() {
             return template;
