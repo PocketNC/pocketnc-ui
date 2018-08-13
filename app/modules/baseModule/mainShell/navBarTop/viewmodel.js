@@ -8,6 +8,10 @@ define(function(require) {
 		var self = this;
         self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
 
+        self.showPower = ko.computed(function() {
+            return self.linuxCNCServer.vars.board_revision.data() === "v1revH";
+        });
+
         self.currentTabNum = ko.observable(parseInt(document.location.hash.substr(1)) || 0);
         self.activeTab0 = ko.computed( function(){ return self.currentTabNum() == 0 } );
         self.activeTab1 = ko.computed( function(){ return self.currentTabNum() == 1 } );

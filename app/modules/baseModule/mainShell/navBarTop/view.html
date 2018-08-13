@@ -12,6 +12,7 @@
 
                 <div class="navbar-form pull-right">
                     <button class="btn" data-bind="click: linuxCNCServer.toggleEstop, css : { 'btn-danger' : linuxCNCServer.estop_inverse } ">{{nls.estop}}</button>
+                    <button class="btn btn-warning" data-bind="visible: showPower, click: linuxCNCServer.togglePower, css : { 'btn-warning' : linuxCNCServer.power_is_on }, enable: linuxCNCServer.estop_inverse ">{{nls.power}}</button>
                     &nbsp;
                     <button class="btn btn-danger" data-toggle="modal" data-target="#shutdownComputerModal" data-bind="click: function() { linuxCNCServer.estop( true ) }"><i class="icon-off icon-large"></i></button>
                 </div>
