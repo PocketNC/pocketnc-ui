@@ -119,9 +119,10 @@ define({
         "BackplotTabLegend": "Settings for Backplot Colors and Display",
         "JogTabLegend"     : "Settings for Keyboard Controlled Jogging",
         "ServerTabLegend"  : "Settings for The LinuxCNC Server",
-        "VersionLegend"    : "PocketNC Software Version",
+        "VersionLegend"    : "PocketNC Version",
 
         "VersionLabel" : "Software Version",
+        "HardwareVersionLabel" : "Hardware Version",
         "CheckForUpdates" : "Check For Updates",
 
         "ServerConfigLabel": "Linux CNC Server Web Configuration",

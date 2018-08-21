@@ -140,6 +140,30 @@ define(function(require) {
             self.settings.persist.BPShowGrid.Scratch( $( '#config_bpgrid_toggle', self.Panel.getJQueryElement() ).bootstrapSwitch('status') ? true : false );
         }
 
+        this.getDetectedHardwareString = function() {
+          var board_revision = self.linuxCNCServer.vars.board_revision.data();
+          
+          if(board_revision) {
+            var revision = board_revision.split("rev");
+            return revision[0] + " Revision " + revision[1];
+          } else {
+            return "Detecting version...";
+          }
+        };
+        this.toggleV1ButtonVisible = ko.computed(function() {
+          var board_revision = self.linuxCNCServer.vars.board_revision.data();
+
+          return (board_revision === "v1revH" || board_revision === "v2revP");
+        });
+        this.toggleV1ButtonText = ko.computed(function() {
+          var board_revision = self.linuxCNCServer.vars.board_revision.data();
+          
+          if(board_revision === "v2revP") {
+            return "Set v1";
+          } else if(board_revision === "v1revH") {
+            return "Set v2 Revision P";
+          }
+        });
         this.getVersion = ko.computed( {
             read: function() {
                 return self.linuxCNCServer.vars.current_version.data.Scratch();

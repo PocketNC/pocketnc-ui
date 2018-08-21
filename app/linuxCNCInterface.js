@@ -980,6 +980,10 @@ define(function (require) {
         lcncsvr.sendCommandWhenReady("set_version", "set_version", [ version ]);
     }
 
+    lcncsvr.toggleV1V2RevP = function() {
+        lcncsvr.sendCommandWhenReady("toggle_v1_v2revP", "toggle_v1_v2revP", []);
+    };
+
     lcncsvr.getINIConfig = function() {
         lcncsvr.socket.send(JSON.stringify({"id": "ini_config", "command": "get", "name": "config" }));
     }

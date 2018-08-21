@@ -295,14 +295,22 @@
                             <select data-bind="options: linuxCNCServer.filteredVersions, value: getVersion" class="" id="version" multiple="false">
                             </select>
                         </div>
-                    </div>
-
-                    <div class="control-group">
                         <div class="controls">
                             <span data-bind='style: { display: linuxCNCServer.CheckingForUpdates() ? "inline-block" : "none" }'><i class="icon icon-spinner icon-spin"></i></span>
                             <button class="btn" data-bind="disable: linuxCNCServer.CheckingForUpdates, click: function() { linuxCNCServer.check_for_updates() }">{{nls.CheckForUpdates}}</button>
                             <button id="saving_version_button" class="btn" data-bind="disable: linuxCNCServer.SettingVersion, click: function() { saveVersion() }">{{nls.Save}}</button> <span id="saving_version"></span>
                             <span data-bind='style: { display: linuxCNCServer.SettingVersion() ? "inline-block" : "none" }'><i class="icon icon-spinner icon-spin"></i></span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">{{nls.HardwareVersionLabel}}</label>
+                        <div style="padding-top: 5px" class="controls">
+                            <span data-bind="text: getDetectedHardwareString()"/>
+                            <br/>
+                            <br/>
+
+                            <button class="btn" data-bind="visible: toggleV1ButtonVisible, text: toggleV1ButtonText, click: linuxCNCServer.toggleV1V2RevP"></button>
                         </div>
                     </div>
 
