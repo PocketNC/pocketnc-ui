@@ -120,10 +120,25 @@ define({
         "JogTabLegend"     : "Settings for Keyboard Controlled Jogging",
         "ServerTabLegend"  : "Settings for The LinuxCNC Server",
         "VersionLegend"    : "PocketNC Version",
+        "StatusLegend"     : "System Status",
+        "StatusTabTitle"     : "Status",
 
         "VersionLabel" : "Software Version",
         "HardwareVersionLabel" : "Hardware Version",
         "CheckForUpdates" : "Check For Updates",
+
+        "RefreshSystemStatus" : "Refresh System Status",
+        "DiskUsage" : "Disk Usage",
+        "IPAddresses" : "IP Addresses",
+        "SystemDate" : "System Date and Time",
+        "ClearLogs" : "Clear Logs",
+        "ClearGCode" : "Clear G Code Files",
+        "AreYouSureLogs" : "Are you sure you want to clear all log files? The log data will be irretrievable.",
+        "AreYouSureLogsShort" : "Clear all log files?",
+        "setCurrentTime" : "Set System Time To This Computer's Time",
+
+        "AreYouSureNCFiles" : "Are you sure you want to remove all G Code files? This is not undoable.",
+        "AreYouSureNCFilesShort" : "Clear all G Code files?",
 
         "ServerConfigLabel": "Linux CNC Server Web Configuration",
         "Launch" : "Launch In New Window",

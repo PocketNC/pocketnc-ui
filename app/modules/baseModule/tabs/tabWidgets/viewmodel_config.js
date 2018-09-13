@@ -164,6 +164,43 @@ define(function(require) {
             return "Set v2 Revision P";
           }
         });
+        this.diskTotal = ko.computed( function() {
+            if(self.linuxCNCServer.vars.system_status.data().disk) {
+                return self.linuxCNCServer.vars.system_status.data().disk.total;
+            }
+            return 100;
+        });
+        this.diskOther = ko.computed( function() {
+            if(self.linuxCNCServer.vars.system_status.data().disk) {
+                return self.linuxCNCServer.vars.system_status.data().disk.other;
+            }
+            return 100;
+        });
+        this.diskLogs = ko.computed( function() {
+            if(self.linuxCNCServer.vars.system_status.data().disk) {
+                return self.linuxCNCServer.vars.system_status.data().disk.logs;
+            }
+            return 0;
+        });
+        this.diskNCFiles = ko.computed( function() {
+            if(self.linuxCNCServer.vars.system_status.data().disk) {
+                return self.linuxCNCServer.vars.system_status.data().disk.ncfiles;
+            }
+            return 0;
+        });
+        this.addresses = ko.computed(function() {
+            if(self.linuxCNCServer.vars.system_status.data().addresses) {
+                return self.linuxCNCServer.vars.system_status.data().addresses;
+            }
+
+            return [];
+        });
+        this.diskAvailable = ko.computed( function() {
+            if(self.linuxCNCServer.vars.system_status.data().disk) {
+                return self.linuxCNCServer.vars.system_status.data().disk.available;
+            }
+            return 0;
+        });
         this.getVersion = ko.computed( {
             read: function() {
                 return self.linuxCNCServer.vars.current_version.data.Scratch();

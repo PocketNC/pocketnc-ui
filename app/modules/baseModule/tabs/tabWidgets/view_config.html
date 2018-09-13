@@ -11,6 +11,7 @@
           <!--  <li><a id="OffsetsTab" href="#OffsetSettings" data-toggle="tab">{{nls.OffsetsSettingsTabTitle}}</a></li>-->
             <li><a id="JogTab" href="#JogSettings" data-toggle="tab">{{nls.JogSettingsTabTitle}}</a></li>
             <li><a id="ServerTab" href="#ServerSettings" data-toggle="tab">{{nls.ServerSettingsTabTitle}}</a></li>
+            <li><a id="StatusTab" href="#StatusSettings" data-toggle="tab">{{nls.StatusTabTitle}}</a></li>
             <li><a id="VersionTab" href="#VersionSettings" data-toggle="tab">{{nls.VersionSettingsTabTitle}}</a></li>
         </ul>
 
@@ -283,6 +284,29 @@
 
             </div>
 
+            <!--************* STATUS SETTINGS **************-->
+            <div class="tab-pane" id="StatusSettings">
+              <legend>{{nls.StatusLegend}}</legend>
+              <h4>{{nls.SystemDate}}</h4>
+              <div>
+                <p data-bind="text: linuxCNCServer.vars.system_status.data() ? new Date(linuxCNCServer.vars.system_status.data().date) : ''"></p>
+                <button type="button" class="btn" data-bind="click: linuxCNCServer.setCurrentTime">{{nls.setCurrentTime}}</button>
+              </div>
+              <h4>{{nls.IPAddresses}}</h4>
+              <div data-bind="foreach: addresses"><p data-bind="text: $data"></p></div>
+              <h4>{{nls.DiskUsage}}</h4>
+              <div>
+                <div class="disk_usage_container">
+                  <div data-bind="style: { width: Math.floor(diskOther()/diskTotal()*100) + '%' }, attr: { title: diskOther == 100 ? 'Loading...' : (diskOther()/diskTotal()*100).toFixed(2) + '% - System Files' }, text: diskOther() == 100 ? 'Loading...' : (diskOther()/diskTotal()*100).toFixed(2) + '% - System Files'" style="border-color: gray; background-color: #dddddd;" class="disk_usage_bar"></div>
+                  <div data-bind="style: { width: Math.floor(diskLogs()/diskTotal()*100) + '%' }, attr: { title: (diskLogs()/diskTotal()*100).toFixed(2) + '% - Logs' }, text: (diskLogs()/diskTotal()*100).toFixed(2) + '% - Logs'" style="border-color: orange; background-color: #f4ce42;" class="disk_usage_bar"></div>
+                  <div data-bind="style: { width: Math.floor(diskNCFiles()/diskTotal()*100) + '%' }, attr: { title: (diskNCFiles()/diskTotal()*100).toFixed(2) + '% - GCode' }, text: (diskNCFiles()/diskTotal()*100).toFixed(2) + '% - GCode'" style="border-color: blue; background-color: rgb(50, 160, 230);" class="disk_usage_bar"></div>
+                </div>
+                <br/>
+                <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#clearLogsModal">{{nls.ClearLogs}}</button>
+                <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#clearNCFilesModal">{{nls.ClearGCode}}</button>
+              </div>
+            </div>
+
             <!--************* VERSION SETTINGS **************-->
             <div class="tab-pane" id="VersionSettings">
 
@@ -323,4 +347,45 @@
 
     </div>
 
+</div>
+
+<div class="modal fade" id="clearLogsModal" tabindex="-1" role="dialog" aria-labelledby="clearLogsModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="clearLogsModalLabel">{{nls.AreYouSureLogsShort}}
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cancel">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        </h5>
+      </div>
+      <div class="modal-body">
+       {{nls.AreYouSureLogs}}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" data-dismiss="modal" data-bind="click: linuxCNCServer.clearLogs">{{nls.ClearLogs}}</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="clearNCFilesModal" tabindex="-1" role="dialog" aria-labelledby="clearNCFilesModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="clearNCFilesModalLabel">{{nls.AreYouSureNCFilesShort}}
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cancel">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        </h5>
+      </div>
+      <div class="modal-body">
+       {{nls.AreYouSureNCFiles}}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" data-dismiss="modal" data-bind="click: linuxCNCServer.clearNCFiles">{{nls.ClearGCode}}</button>
+      </div>
+    </div>
+  </div>
 </div>

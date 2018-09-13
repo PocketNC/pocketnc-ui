@@ -250,6 +250,7 @@ define(function (require) {
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
     lcncsvr.vars.board_revision = { data: ko.observable(""), watched: false };
+    lcncsvr.vars.system_status = { data: ko.observable(""), watched: false };
 
     lcncsvr.filteredVersions = ko.computed(function() {
         var versions = lcncsvr.vars.versions.data();
@@ -986,6 +987,22 @@ define(function (require) {
 
     lcncsvr.getINIConfig = function() {
         lcncsvr.socket.send(JSON.stringify({"id": "ini_config", "command": "get", "name": "config" }));
+    }
+
+    lcncsvr.refreshSystemStatus = function() {
+        lcncsvr.socket.send(JSON.stringify({"id": "system_status", "command": "get", "name": "system_status" }));
+    }
+    lcncsvr.setCurrentTime = function() {
+        lcncsvr.sendCommandWhenReady("set_date", "set_date", [ new Date(Date.now()).toUTCString() ]);
+        lcncsvr.refreshSystemStatus();
+    }
+    lcncsvr.clearLogs = function() {
+        lcncsvr.sendCommandWhenReady("clear_logs", "clear_logs", []);
+        lcncsvr.refreshSystemStatus();
+    }
+    lcncsvr.clearNCFiles = function() {
+        lcncsvr.sendCommandWhenReady("clear_ncfiles", "clear_ncfiles", []);
+        lcncsvr.refreshSystemStatus();
     }
 
     lcncsvr.getINIConfigParameter = function(section, parameter) {
