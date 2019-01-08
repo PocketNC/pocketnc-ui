@@ -12,7 +12,14 @@
 
                 <td class="">
                     <input type="text" class="input span12 huge-input" style="text-align: right; font-weight:bold;"
-                           data-bind="event: {change: function(data,event){ $root.onDROValChange(data,event,$data)}, blur: function(data,event){ $root.onDROValChange(data,event,$data) } }, value: ( $root.linuxCNCServer.RmtDRO()[$data].toFixed($root.linuxCNCServer.DisplayPrecision()) ), attr:{id: (($data).toString()+'droax') } ">
+                           data-bind="event: {change: function(data,event){
+                               $root.onDROValChange(data,event,$data)}, blur:
+                               function(data,event){
+                                   $root.onDROValChange(data,event,$data) } },
+                                   value: ($root.formatDisplayValue(
+                                   $root.linuxCNCServer.RmtDRO()[$data]).toFixed($root.linuxCNCServer.DisplayPrecision())
+                                   ), attr:{id: (($data).toString()+'droax') }
+                                   ">
                 </td>
 
 <!--                <td class="width-button">

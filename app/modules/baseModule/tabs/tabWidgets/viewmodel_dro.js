@@ -48,6 +48,13 @@ define(function(require) {
             else
                 $(event.currentTarget).val( self.linuxCNCServer.RmtDRO()[index].toFixed(self.linuxCNCServer.DisplayPrecision()) );
         }
+
+        self.formatDisplayValue = function(rawVal)
+        {
+            if(Math.abs(rawVal) < 0.00001)
+                return 0;
+             return rawVal;
+        }
 	};
 
 	return ViewModel;
