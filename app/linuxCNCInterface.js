@@ -250,14 +250,25 @@ define(function (require) {
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
     lcncsvr.vars.board_revision = { data: ko.observable(""), watched: false };
+    lcncsvr.vars.dogtag = { data: ko.observable(""), watched: false };
     lcncsvr.vars.system_status = { data: ko.observable(""), watched: false };
 
     lcncsvr.filteredVersions = ko.computed(function() {
         var versions = lcncsvr.vars.versions.data();
         var boardRev = lcncsvr.vars.board_revision.data();
+        var dogtag = lcncsvr.vars.dogtag.data();
 
         if(boardRev != "v2revP") {
             var index = versions.indexOf("v3.0.0");
+            if(index > -1) {
+                versions = versions.slice(index);
+            } else {
+                versions = [];
+            }
+        }
+
+        if(dogtag != "BeagleBoard.org Debian Image 2015-02-01") {
+            var index = versions.indexOf("v4.0.0");
             if(index > -1) {
                 versions = versions.slice(index);
             } else {
