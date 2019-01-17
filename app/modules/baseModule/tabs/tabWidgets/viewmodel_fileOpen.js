@@ -12,7 +12,8 @@ define(function(require) {
 
         var reader = {};
         var newFile = {};
-        var chunkSize = 300000;
+        var chunkSize = 100000;
+        var overwrite = false;
 
         this.getTemplate = function()
         {
@@ -48,41 +49,67 @@ define(function(require) {
             self.linuxCNCServer.deleteFile(newFile.name);
 
             var chunkStart = 0;
+            start = Date.now();
+            now = start;
             self.upload(chunkStart);
             $('#file_input').val(""); // clear file_input so same file can be reuploaded.
         }
-
+var prev = 0, now = 0, start;
         this.upload = function(startIdx)
         {
             var nextIdx = startIdx + chunkSize + 1;
             var blob = newFile.slice( startIdx, nextIdx );
        
             reader.onload = (function(theChunk) {
+                
                 return function(e) {
-                    self.linuxCNCServer.uploadGCode(newFile.name, e.target.result );
                     
-                    self.linuxCNCServer.socket.onmessage = function(event) {
-                        console.log("other msg");
+                    function listenMsg(event){
                         var msg = JSON.parse(event.data);
-                        if(msg.id === "program_upload"){
+                        if(msg.id === "program_upload_chunk"){
                             console.log(msg);
                             if(msg.code === "?OK"){
+                                self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
                                 if(nextIdx < newFile.size){
+                                    prev = now;
+                                    now = Date.now();
+                                    console.log(now - prev);
                                     console.log("File upload progress: " + (nextIdx / newFile.size) * 100);
                                     self.upload(nextIdx);
                                 }
                                 else{
                                     console.log("done");
-                                    self.linuxCNCServer.requestFileContent();
+                                    console.log(Date.now() - start);
                                 }
                             }
                         }
                     }
-                };
+                    
+                    self.linuxCNCServer.socket.addEventListener('message', listenMsg);
+                    var flag = (nextIdx > newFile.size) ? 1 : 0;
+                    self.linuxCNCServer.uploadChunkGCode(newFile.name, e.target.result, flag);
+                }
             })(blob);
+            
             reader.readAsText(blob);
+        }
 
-       }
+        this.finishUpload = function() {
+            function listenFinishMsg(e) {
+                var msg = JSON.parse(e.data);
+                if(msg.id === "program_upload_finish"){
+                    console.log(msg);
+                    if(msg.code === "?OK"){
+                        if(msg.data === "filename_in_use")
+                            console.log("confirm file replacement");
+                        else    
+                            self.linuxCNCServer.requestFileContent();
+                    }
+                }
+            }
+            self.linuxCNCServer.socket.addEventListener('message', listenFinishMsg);
+            self.linuxCNCServer.finishUploadGCode(newFile.name);
+        }
 
 	this.initialize = function( Panel ) {
             if (self.Panel == null)

@@ -1050,6 +1050,17 @@ define(function (require) {
         lcncsvr.sendCommand("program_upload","program_upload",[filename, data]);
     }
 
+    lcncsvr.uploadChunkGCode = function(filename, data, flag) {
+        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
+        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
+        console.log(flag);
+        lcncsvr.sendCommand("program_upload_chunk","program_upload_chunk",[filename, data, flag]);
+    }
+
+    lcncsvr.finishUploadGCode = function(filename) {
+        lcncsvr.sendCommand("program_upload_finish","program_upload_finish",[filename]);
+    }
+
     lcncsvr.sendAllWatchRequests = function () {
         try {
             var id;
