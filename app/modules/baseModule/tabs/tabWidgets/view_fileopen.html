@@ -38,6 +38,28 @@
   </div>
 </div>
 
+<div class="modal fade" id="fileOverwriteModal" tabindex="-1" role="dialog" aria-labelledby="fileOverwriteLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="fileOverwriteModalLabel">Do you want to overwrite the existing file with the same name?
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cancel">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        </h5>
+      </div>
+      <div class="modal-body">
+          Are you sure you want to overwrite <span id="fileOverwriteFile">insert file here</span>? This operation cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" data-dismiss="modal" data-bind="click: function() { upload() }">Overwrite</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
             <table class="table table-condensed">
                 <tbody>
                 <tr class="borderless-table">
@@ -64,11 +86,18 @@
                             <input id="file_input" type="file"/>
                         </span>
 
-                </td>
+                    </td>
+                    
                 </tr>
-                </tbody>
-            </table>
 
+
+                </tbody>                
+            </table>
+                 <td>
+                    <div class="progress">
+                        <div class="bar" id="uploadProgressBar"></div>
+                    </div>
+                </td>
         </div>
     </div>
 

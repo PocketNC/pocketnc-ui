@@ -12,7 +12,7 @@ define(function(require) {
 
         var reader = {};
         var newFile = {};
-        var chunkSize = 100000;
+        var chunkSize = 2000000;
         var overwrite = false;
 
         this.getTemplate = function()
@@ -41,21 +41,21 @@ define(function(require) {
 
         this.testFileSelect = function( evt )
         {
+            overwrite = false;
             var files = evt.target.files; // FileList object
             reader = new FileReader();
             newFile = files[0];
             
             //If a file of the same name is already present, delete it
-            self.linuxCNCServer.deleteFile(newFile.name);
+            //self.linuxCNCServer.deleteFile(newFile.name);
 
-            var chunkStart = 0;
             start = Date.now();
             now = start;
-            self.upload(chunkStart);
+            self.upload();
             $('#file_input').val(""); // clear file_input so same file can be reuploaded.
         }
 var prev = 0, now = 0, start;
-        this.upload = function(startIdx)
+        this.upload = function(startIdx=0)
         {
             var nextIdx = startIdx + chunkSize + 1;
             var blob = newFile.slice( startIdx, nextIdx );
@@ -69,48 +69,72 @@ var prev = 0, now = 0, start;
                         if(msg.id === "program_upload_chunk"){
                             console.log(msg);
                             if(msg.code === "?OK"){
+                                
                                 self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
+                                 
+                                if(msg.data === "occupied"){
+                                    overwrite = true;
+                                    $('#fileOverwriteFile').html(newFile.name);
+                                    $('#fileOverwriteModal').modal('show'); 
+                                    return;
+                                }
+
+                                self.showProgress(nextIdx / newFile.size); 
                                 if(nextIdx < newFile.size){
-                                    prev = now;
-                                    now = Date.now();
-                                    console.log(now - prev);
-                                    console.log("File upload progress: " + (nextIdx / newFile.size) * 100);
                                     self.upload(nextIdx);
                                 }
                                 else{
-                                    console.log("done");
-                                    console.log(Date.now() - start);
+                                    //self.download(newFile.name);
+                                    self.linuxCNCServer.requestFileContent();
                                 }
+                            }
+                            else if(msg.code === "?Error executing command"){
+                                window.alert("Error uploading file");
                             }
                         }
                     }
                     
                     self.linuxCNCServer.socket.addEventListener('message', listenMsg);
-                    var flag = (nextIdx > newFile.size) ? 1 : 0;
-                    self.linuxCNCServer.uploadChunkGCode(newFile.name, e.target.result, flag);
+                    var start = startIdx === 0;
+                    var end = nextIdx > newFile.size;
+                    self.linuxCNCServer.uploadChunkGCode(newFile.name, e.target.result, start, end, overwrite);
                 }
             })(blob);
             
             reader.readAsText(blob);
         }
 
-        this.finishUpload = function() {
-            function listenFinishMsg(e) {
-                var msg = JSON.parse(e.data);
-                if(msg.id === "program_upload_finish"){
-                    console.log(msg);
-                    if(msg.code === "?OK"){
-                        if(msg.data === "filename_in_use")
-                            console.log("confirm file replacement");
-                        else    
-                            self.linuxCNCServer.requestFileContent();
-                    }
-                }
-            }
-            self.linuxCNCServer.socket.addEventListener('message', listenFinishMsg);
-            self.linuxCNCServer.finishUploadGCode(newFile.name);
+        this.showProgress = function(proportion){
+            var bar = $('#uploadProgressBar');
+            percent = Math.min((proportion * 100).toFixed(1), 100);
+            percent = percent + '%';
+            bar.width(percent);
+            bar.html(percent); 
         }
 
+        this.download = function(filename){
+            function listenMsg(event){
+            var msg = JSON.parse(event.data);
+                  if(msg.id === "program_download_chunk"){
+                  console.log(msg);
+                  if(msg.code === "?OK"){
+                    
+                    self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
+                     
+                  }
+                  else if(msg.code === "?Error executing command"){
+                    window.alert("Error uploading file");
+                  }
+                  }
+                  }
+            var sizeRead = 0, fileSize = chunkSize;
+            self.linuxCNCServer.socket.addEventListener('message', listenMsg);
+            do{
+                var ret = self.linuxCNCServer.requestFileContent();
+                sizeRead += chunkSize;
+            } while (sizeRead < fileSize)     
+        }
+        
 	this.initialize = function( Panel ) {
             if (self.Panel == null)
             {
