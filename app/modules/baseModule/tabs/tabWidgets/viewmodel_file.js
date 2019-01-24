@@ -5,11 +5,14 @@ define(function(require) {
 
 	var ViewModel = function(moduleContext, privateContext) {
 
-		var self = this;
+    	var self = this;
         self.Panel = null;
         self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
         self.context = moduleContext;
         self.privateContext = privateContext;
+
+        self.currentLine = 0;
+        self.currentLineByte = 0;
 
         this.getTemplate = function()
         {
@@ -42,7 +45,9 @@ define(function(require) {
                     data: data,
                     stretchH: "last",
                     rowHeaders: true,
+                    rowHeaderWidth: 600,
                     height: 400,
+                    colWidths: 900,
                     startCols: 1,
                     outsideClickDeselects: false,
                     columns: [
@@ -79,10 +84,14 @@ define(function(require) {
                 // monitor file contents
                 self.linuxCNCServer.vars.file_content.data.subscribe( self.updateData );
                 self.linuxCNCServer.ui_motion_line.subscribe( function(newval){ self.motionLineUpdateInProgress=true; self.updateDisplayLine(newval); self.motionLineUpdateInProgress=false; });
+                
+
 
                 self.fileListTable.dblclick( function(){ self.setMotionLineToSelected(); } );
 
                 setTimeout( function() {
+                    console.log('timeout');
+                    self.get
                     self.updateData(self.linuxCNCServer.vars.file_content.data());
                     self.updateDisplayLine(self.linuxCNCServer.ui_motion_line());
                 },2);
@@ -100,10 +109,23 @@ define(function(require) {
 
         this.updateData = function( newfilecontent )
         {
+            console.log(newfilecontent);
             var ht = self.fileListTable.handsontable('getInstance');
+            
+            if( newfilecontent.length === 0)
+                ht.loadData([]);
+            else{
+                newfilecontent[0].forEach(function(line){
+                    console.log(line); 
+                    ht.getData().push(line);
+                });
+            }
 
-            var dat = _.zip(newfilecontent.split('\n'));
-            ht.loadData(dat);
+            console.log(ht.getData());
+
+            //var dat = _.zip(newfilecontent.split('\n'));
+            var dat = _.zip(newfilecontent);
+            //ht.loadData(dat);
 
             var rh = [];
             var rc = ht.countRows();
@@ -114,8 +136,6 @@ define(function(require) {
             ht.render();
 
             $("#jog_focus_handler").focus();
-
-
         }
 
         this.updateDisplayLine = function( lineNum )

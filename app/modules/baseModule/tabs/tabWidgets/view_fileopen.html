@@ -10,6 +10,11 @@
 .file_hover:hover .btn {
     color: #333333;
 }
+.progress {
+    display: inline;
+}
+.cancel {
+}
 </style>
 <div class="well well-with-label">
 
@@ -93,11 +98,14 @@
 
                 </tbody>                
             </table>
-                 <td>
-                    <div class="progress">
-                        <div class="bar" id="uploadProgressBar"></div>
-                    </div>
-                </td>
+            <div id="uploadDIV" style="display: block;">
+                <div class="progress" align="left">
+                    <div class="bar" id="uploadProgressBar"></div>
+                </div>
+                <div id="cancel" class="cancel" align="right">
+                    <button type="button" class="btn btn-warning">Cancel</button>
+                </div>
+            </div>
         </div>
     </div>
 

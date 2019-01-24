@@ -244,76 +244,77 @@ define(function (require) {
     lcncsvr.vars.axis_mask = { data: ko.observable(0), watched: true };
     lcncsvr.vars.backplot_async = { data: ko.observable(""), watched: false, convert_to_json: true, local:true };
     lcncsvr.vars.file.data.subscribe( function(newval){ lcncsvr.socket.send(JSON.stringify({"id": "backplot_async", "command": "get", "name": "backplot_async"})); });
-    lcncsvr.vars.file_content = { data: ko.observable(""), watched: false, local:true };
-    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval) lcncsvr.requestFileContent() });
-
+    lcncsvr.vars.file_content = { data: ko.observableArray([]), watched: false, local:true };
+    lcncsvr.vars.fileFetchers = [];
+    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval){console.log('yo'); lcncsvr.request(); } }); 
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
     lcncsvr.vars.board_revision = { data: ko.observable(""), watched: false };
     lcncsvr.vars.system_status = { data: ko.observable(""), watched: false };
 
     lcncsvr.filteredVersions = ko.computed(function() {
-        var versions = lcncsvr.vars.versions.data();
-        var boardRev = lcncsvr.vars.board_revision.data();
+            var versions = lcncsvr.vars.versions.data();
+            var boardRev = lcncsvr.vars.board_revision.data();
 
-        if(boardRev != "v2revP") {
+            if(boardRev != "v2revP") {
             var index = versions.indexOf("v3.0.0");
             if(index > -1) {
-                versions = versions.slice(index);
+            versions = versions.slice(index);
             } else {
-                versions = [];
+            versions = [];
             }
-        }
+            }
 
-        return versions;
-    }); 
+            return versions;
+            }); 
 
     lcncsvr.vars.versions.data.subscribe( function(newval) {
-        lcncsvr.CheckingForUpdates(false);
-    });
+            lcncsvr.CheckingForUpdates(false);
+            });
 
     lcncsvr.server_logged_in.subscribe( function(newval) {
-        if (!newval)
-        {
+            if (!newval)
+            {
             console.log("SERVER_LOGGED_IN: " + newval);
             lcncsvr.vars.file.data("");
             lcncsvr.vars.backplot_async.data("");
-            lcncsvr.vars.file_content.data("");
-        }
-    });
+            console.log('clearing');
+            lcncsvr.vars.file_content.data([]);
+            }
+            });
 
     // calculated variables
     lcncsvr.AllHomed = ko.computed(function() {
-        var homed = lcncsvr.vars.homed.data();
+            var homed = lcncsvr.vars.homed.data();
 
-        if(lcncsvr.AxesNumbers) {
+            if(lcncsvr.AxesNumbers) {
             var axes = lcncsvr.AxesNumbers();
             for(var i = 0; i < axes.length; i++) {
-                if(!homed[axes[i]]) {
-                    return false;
-                }
+            if(!homed[axes[i]]) {
+            return false;
+            }
             }
             return true;
-        }
+            }
 
-        return false;
-    });
+            return false;
+            });
     lcncsvr.estop_inverse = ko.computed(function () {
-        return !lcncsvr.vars.estop.data();
-    });
+            return !lcncsvr.vars.estop.data();
+            });
     lcncsvr.power_is_on = ko.computed(function () {
-        return lcncsvr.vars.task_state.data() === lcncsvr.STATE_ON;
-    });
+            return lcncsvr.vars.task_state.data() === lcncsvr.STATE_ON;
+            });
 
     /**
      * Synthetic Variables
      */
-     lcncsvr.RmtRunning = ko.computed(function(){
-        return lcncsvr.vars.task_mode.data() === lcncsvr.TASK_MODE_AUTO && lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_IDLE;
-     });
+    lcncsvr.RmtRunning = ko.computed(function(){
+            return lcncsvr.vars.task_mode.data() === lcncsvr.TASK_MODE_AUTO && lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_IDLE;
+            });
     lcncsvr.RmtManualInputAllowed = ko.computed( function(){
-        return lcncsvr.vars.task_state.data() === lcncsvr.STATE_ON && ( lcncsvr.vars.interp_state.data() === lcncsvr.TASK_INTERP_IDLE || ( lcncsvr.vars.task_mode.data() === lcncsvr.TASK_MODE_MDI && !lcncsvr.vars.queue_full.data() ) );
-    });
+            return lcncsvr.vars.task_state.data() === lcncsvr.STATE_ON && ( lcncsvr.vars.interp_state.data() === lcncsvr.TASK_INTERP_IDLE || ( lcncsvr.vars.task_mode.data() === lcncsvr.TASK_MODE_MDI && !lcncsvr.vars.queue_full.data() ) );
+            });
 
     lcncsvr.RmtDROProgram = ko.observable([0, 0, 0, 0, 0, 0, 0, 0, 0]);
     lcncsvr.RmtDRO = ko.observable([0, 0, 0, 0, 0, 0, 0, 0, 0]);
@@ -325,70 +326,70 @@ define(function (require) {
             var g5x = lcncsvr.vars.g5x_offset.data();
             var g92 = lcncsvr.vars.g92_offset.data();
             var tlo = lcncsvr.vars.tool_offset.data();
-
+            
             for (idx = 0; idx < 9; idx++)
-                ret[idx] = act[idx] - g5x[idx] - g92[idx] - tlo[idx];
+            ret[idx] = act[idx] - g5x[idx] - g92[idx] - tlo[idx];
             return lcncsvr.MachineUnitsToDisplayUnitsLinearPos(ret);
         }
     });
     lcncsvr.RmtDROReal.subscribe(function(newval){
-        lcncsvr.RmtDRO(newval);
-        lcncsvr.RmtDROProgram( lcncsvr.DisplayUnitsToProgramUnitsPos(newval) );
-    });
-
+            lcncsvr.RmtDRO(newval);
+            lcncsvr.RmtDROProgram( lcncsvr.DisplayUnitsToProgramUnitsPos(newval) );
+            });
+    
     lcncsvr.AxesNumbers = ko.observable([]);
     lcncsvr.AxesNumbersReal = ko.computed(function(){
-
-        var axismask = lcncsvr.vars.axis_mask.data();
-        var idx;
-        var ret = [];
-        for (idx = 0; idx < 9; idx++)
+    
+            var axismask = lcncsvr.vars.axis_mask.data();
+            var idx;
+            var ret = [];
+            for (idx = 0; idx < 9; idx++)
             if (axismask & (1 << idx))
-                ret.push(idx);;
-        return ret;
-    });
+            ret.push(idx);;
+            return ret;
+            });
     lcncsvr.AxesNumbersReal.subscribe(function(newval){lcncsvr.AxesNumbers(newval);});
-
-
+    
+    
     lcncsvr.RmtG5xString = ko.computed( function (){
-        if (lcncsvr.vars.g5x_index.data() <= 6)
+            if (lcncsvr.vars.g5x_index.data() <= 6)
             return "G5" + (lcncsvr.vars.g5x_index.data() + 3);
-        else
+            else
             return "G59." + (lcncsvr.vars.g5x_index.data() - 6);
-     });
-
+            });
+    
     lcncsvr.RmtPaused = ko.computed( function() {
-       return lcncsvr.vars.interp_state.data() == lcncsvr.TASK_INTERP_PAUSED;
-    });
-
+            return lcncsvr.vars.interp_state.data() == lcncsvr.TASK_INTERP_PAUSED;
+            });
+    
     lcncsvr.filename_short = ko.computed( function() {
-        var files = lcncsvr.vars.ls.data();
-        var str = lcncsvr.vars.file.data();
-
-        if(files.indexOf(str) != -1) {
+            var files = lcncsvr.vars.ls.data();
+            var str = lcncsvr.vars.file.data();
+    
+            if(files.indexOf(str) != -1) {
             var parts = str.split('/');
             str = parts[parts.length-1];
-
+    
             if (str.length > 32)
-                return "..." + str.substr( str.length - 29 );
+            return "..." + str.substr( str.length - 29 );
             return str;
-        }
-
-        return "";
-    });
-
+            }
+    
+            return "";
+            });
+    
     lcncsvr.filename_nopath = ko.computed( function() {
-        var str = lcncsvr.vars.file.data();
-        str = str.split("/");
-        str = $(str).last()[0];
-        str = str || "";
-        return str;
-    });
-
+            var str = lcncsvr.vars.file.data();
+            str = str.split("/");
+            str = $(str).last()[0];
+            str = str || "";
+            return str;
+            });
+    
     /**
      * Server Functions
      */
-
+    
     lcncsvr.sendCommand = function( id, name, ordinals )
     {
         try {
@@ -405,7 +406,7 @@ define(function (require) {
         }
         return true;
     }
-
+    
     lcncsvr._pendingCommands = [];
     lcncsvr.sendCommandWhenReady = function( id, name, ordinals )
     {
@@ -417,15 +418,15 @@ define(function (require) {
         } catch (e) {}
     }
     lcncsvr.server_logged_in.subscribe(function(isLoggedIn){
-        if (isLoggedIn)
-        {
+            if (isLoggedIn)
+            {
             lcncsvr._pendingCommands.forEach(function(cmd){
                 lcncsvr.sendCommand(cmd[0],cmd[1],cmd[2]);
-            });
+                });
             lcncsvr._pendingCommands = [];
-        }
-    });
-
+            }
+            });
+    
     lcncsvr.setRmtAnyMode = function( modes )
     {
         if ($.isEmptyObject(modes) || !$.isArray(modes) )
@@ -440,7 +441,7 @@ define(function (require) {
             return false;
         }
     }
-
+    
     lcncsvr.setRmtMode = function( mode )
     {
         if ( lcncsvr.vars.task_mode.data() == mode )
@@ -462,13 +463,13 @@ define(function (require) {
         lcncsvr.sendCommand("wait_complete","wait_complete",["1"]);
         return true;
     }
-
+    
     lcncsvr.abort = function()
     {
         lcncsvr.sendCommand("abort","abort");
         return;
     }
-
+    
     lcncsvr.estop = function( onoff )
     {
         if (onoff)
@@ -477,7 +478,7 @@ define(function (require) {
             if (lcncsvr.vars.task_state.data() === lcncsvr.STATE_ESTOP)
                 lcncsvr.sendCommand("set_estop","state",["STATE_ESTOP_RESET"]);
     }
-
+    
     lcncsvr.toggleEstop = function( )
     {
         if ( lcncsvr.vars.task_state.data() === lcncsvr.STATE_ESTOP )
@@ -485,55 +486,55 @@ define(function (require) {
         else
             lcncsvr.estop( true );
     }
-
+    
     lcncsvr.toggleOptionalStop = function( )
     {
         lcncsvr.setOptionalStop(!lcncsvr.vars.optional_stop.data());
     }
-
+    
     lcncsvr.setOptionalStop = function( onoff )
     {
         lcncsvr.sendCommand("set_optional_stop","set_optional_stop",[onoff]);
     }
-
+    
     lcncsvr.machinePower = function( onoff )
     {
         if (lcncsvr.vars.task_state.data() === lcncsvr.STATE_ESTOP)
             return;
-
+    
         if (onoff)
             lcncsvr.sendCommand("power","state",["STATE_ON"]);
         else
             lcncsvr.sendCommand("power","state",["STATE_OFF"]);
     }
-
+    
     lcncsvr.togglePower = function( )
     {
         if (lcncsvr.vars.task_state.data() === lcncsvr.STATE_ESTOP)
             return;
-
+    
         if ( lcncsvr.vars.task_state.data() === lcncsvr.STATE_OFF || lcncsvr.vars.task_state.data() === lcncsvr.STATE_ESTOP_RESET )
             lcncsvr.machinePower( true );
         else
             lcncsvr.machinePower( false );
     }
-
+    
     lcncsvr.runFrom = function( lineNum )
     {
         if ( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO))
             return;
-        
+    
         lcncsvr.sendCommand("auto","auto",["AUTO_RUN",lineNum.toString()])
     }
-
+    
     lcncsvr.runStep = function( )
     {
         if ( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO))
             return;
         lcncsvr.sendCommand("auto","auto",["AUTO_STEP"])
-        return;
+            return;
     }
-
+    
     lcncsvr.pause = function(  )
     {
         if (lcncsvr.vars.task_mode.data() !== lcncsvr.TASK_MODE_AUTO || ( lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_READING && lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_WAITING ))
@@ -541,25 +542,25 @@ define(function (require) {
         if ( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO))
             return;
         lcncsvr.sendCommand("auto","auto",["AUTO_PAUSE"])
-        return;
+            return;
     }
-
-
+    
+    
     lcncsvr.resume = function()
     {
         if (!lcncsvr.vars.paused.data())
             return;
-
+    
         if (lcncsvr.vars.task_mode.data() !== lcncsvr.TASK_MODE_AUTO && lcncsvr.vars.task_mode.data() !== lcncsvr.TASK_MODE_MDI )
             return;
-
+    
         if ( !lcncsvr.setRmtAnyMode([lcncsvr.TASK_MODE_AUTO,lcncsvr.TASK_MODE_MDI]))
             return;
         lcncsvr.sendCommand("auto","auto",["AUTO_RESUME"])
-        return;
+            return;
     }
-
-
+    
+    
     lcncsvr.togglePause = function()
     {
         if (lcncsvr.vars.paused.data())
@@ -567,18 +568,18 @@ define(function (require) {
         else
             return lcncsvr.pause();
     }
-
+    
     lcncsvr.shutdown_computer = function() {
-      lcncsvr.sendCommand("shutdown_computer","shutdown_computer");
+        lcncsvr.sendCommand("shutdown_computer","shutdown_computer");
     }
-
+    
     lcncsvr.stop = function()
     {
         lcncsvr.abort();
         lcncsvr.sendCommand("wait_complete","wait_complete",["1"]);
         return;
     }
-
+    
     lcncsvr.mdi = function( cmd )
     {
         if ($.isEmptyObject(cmd)) {
@@ -592,13 +593,13 @@ define(function (require) {
         }
         return lcncsvr.sendCommand("mdi","mdi",[cmd]);
     }
-
+    
     lcncsvr.prepare_for_mdi = function()
     {
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
         return lcncsvr.RmtManualInputAllowed();
     }
-
+    
     lcncsvr.setFeedrate = function( rate )
     {
         if (!$.isNumeric(rate))
@@ -609,7 +610,7 @@ define(function (require) {
         lcncsvr.sendCommand("set_feedrate","feedrate", [rate.toString()] );
         return;
     }
-
+    
     lcncsvr.setMaxVel = function(rate) {
         if (!$.isNumeric(rate))
             return;
@@ -624,39 +625,39 @@ define(function (require) {
         lcncsvr.sendCommand("set_maxvel","maxvel", [parseFloat(lcncsvr.vars["halpin_halui.max-velocity.value"].data()) + delta] );
         return;
     }
-
+    
     lcncsvr.incrementFeedrate = function( delta )
     {
         if (!$.isNumeric(delta))
             return;
-
+    
         lcncsvr.sendCommand("set_feed_override","set_feed_override", ["1"]);
         lcncsvr.sendCommand("set_feedrate","feedrate", [lcncsvr.vars.feedrate.data() + delta] );
         return;
     }
-
+    
     lcncsvr.setSpindleOverride = function( rate )
     {
         if (!$.isNumeric(rate))
             return;
         if (rate < 0)
             rate = 0;
-
+    
         lcncsvr.sendCommand("set_spindle_override","set_spindle_override", ["1"]);
         lcncsvr.sendCommand("setspindleoverride","spindleoverride", [rate.toString()] );
         return;
     }
-
+    
     lcncsvr.incrementSpindleOverride = function( delta )
     {
         if (!$.isNumeric(delta))
             return;
-
+    
         lcncsvr.sendCommand("set_spindle_override","set_spindle_override", ["1"]);
         lcncsvr.sendCommand("setspindleoverride","spindleoverride", [lcncsvr.vars.spindlerate.data() + delta] );
         return;
     }
-
+    
     lcncsvr.setEnableSpindleOverride = function( onoff )
     {
         if (onOff)
@@ -665,12 +666,12 @@ define(function (require) {
             lcncsvr.sendCommand("set_spindle_override","set_spindle_override",["0"]);
         return;
     }
-
+    
     lcncsvr.stripPath = function(filepath) {
         var parts = filepath.split('/');
         return parts[parts.length-1];
     }
-
+    
     lcncsvr.openFile = function( filename )
     {
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
@@ -678,8 +679,8 @@ define(function (require) {
         lcncsvr.sendCommand("program_open","program_open",[filename]);
         return;
     }
-
-
+    
+    
     lcncsvr.touchoff = function( g5x, axis, offset )
     {
         var cmd = "G10 L20 P" + g5x;
@@ -687,35 +688,35 @@ define(function (require) {
             cmd = cmd + axis;
         else
             cmd = cmd + lcncsvr.axisNames[axis];
-
+    
         if (_.isNumber(offset))
             offset = offset.toFixed(6);
-
+    
         cmd = cmd + (offset);
-
+    
         lcncsvr.mdi(cmd);
     }
-
+    
     lcncsvr.touchoffDisplay = function( g5x, axis, offset )
     {
         if (axis < 3 || axis > 5 )
             offset = lcncsvr.DisplayUnitsToProgramUnits(offset);
         lcncsvr.touchoff( g5x, axis, offset );
     }
-
+    
     lcncsvr.touchoffCurrent = function( axis, offset )
     {
         lcncsvr.touchoff( lcncsvr.vars.g5x_index.data(), axis, offset );
     }
-
+    
     lcncsvr.touchoffCurrentDisplay = function( axis, offset )
     {
         if (axis < 3 || axis > 5 )
             offset = lcncsvr.DisplayUnitsToProgramUnits(offset);
         lcncsvr.touchoff( lcncsvr.vars.g5x_index.data(), axis, offset );
     }
-
-
+    
+    
     lcncsvr.clearG5xAll = function( g5x )
     {
         var cmd = "G10 L2 P" + g5x;
@@ -726,23 +727,23 @@ define(function (require) {
                 cmd = cmd + lcncsvr.axisNames[idx] + "0";
         return lcncsvr.mdi(cmd);
     }
-
+    
     lcncsvr.clearG5xAllCurrent = function( )
     {
         lcncsvr.clearG5xAll(0);
     }
-
+    
     lcncsvr.setG5x = function( index )
     {
         if (index < 0 || index >= 9)
             return;
-
+    
         if (index <= 6)
             lcncsvr.mdi("G5" + (index + 3));
         else
             lcncsvr.mdi("G59." + (index - 6));
     }
-
+    
     lcncsvr.touchoffAll = function( g5x )
     {
         var cmd = "G10 L20 P" + g5x;
@@ -753,43 +754,43 @@ define(function (require) {
                 cmd = cmd + lcncsvr.axisNames[idx] + "0";
         return lcncsvr.mdi(cmd);
     }
-
+    
     lcncsvr.isAxisAvailable  = function( axisnum )
     {
         return (lcncsvr.vars.axis_mask.data() & (1<<axisnum)) != 0;
     }
-
+    
     lcncsvr.isAnyAxisAvailable = function()
     {
         return (lcncsvr.vars.axis_mask.data()) != 0;
     };
-
+    
     lcncsvr.clearG92 = function()
     {
         return lcncsvr.mdi("G92.1");
     };
-
+    
     lcncsvr.g92Set = function( axis, offset )
     {
         if (_.isNumber(offset))
             offset = offset.toFixed(6);
-
+    
         var cmd = "G92 " + lcncsvr.axisNames[axis] + offset;
         return lcncsvr.mdi(cmd);
     };
-
+    
     lcncsvr.g92SetDisplay = function( axis, offset )
     {
         if (axis < 3 || axis > 5)
             offset = lcncsvr.DisplayUnitsToProgramUnits(offset);
-
+    
         if (_.isNumber(offset))
             offset = offset.toFixed(6);
-
+    
         var cmd = "G92 " + lcncsvr.axisNames[axis] + offset;
         return lcncsvr.mdi(cmd);
     };
-
+    
     lcncsvr.setG92Enable = function( onoff )
     {
         if (onoff)
@@ -797,7 +798,7 @@ define(function (require) {
         else
             lcncsvr.mdi("G92.2");
     };
-
+    
     lcncsvr.jogIncr = function( axisNumber, dist )
     {
         try {
@@ -808,49 +809,49 @@ define(function (require) {
             lcncsvr.sendCommand( "JOG", "jog", ["JOG_INCREMENT", axisNumber, lcncsvr.jog_speed_fast(), dist ])
         } catch(ex){}
     };
-
+    
     lcncsvr.jogCont = function( axisNumber, speed )
     {
         try {
             speed = speed / 60;
             speed = speed.toFixed(3);
         } catch(ex){}
-
+    
         try {
             lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MANUAL);
             lcncsvr.sendCommand( "JOG", "jog", ["JOG_CONTINUOUS", axisNumber, speed ])
         } catch(ex){}
     };
-
+    
     lcncsvr.jogStop = function( axisNumber )
     {
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MANUAL);
         lcncsvr.sendCommand( "JOG", "jog", ["JOG_STOP", axisNumber])
     };
-
+    
     lcncsvr.homeAll = function()
     {
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MANUAL);
         lcncsvr.sendCommand("home","home",["-1"]);
     };
-
+    
     lcncsvr.homeAxis = function( axis )
     {
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MANUAL);
         lcncsvr.sendCommand("home","home",[axis.toString()]);
     };
-
+    
     lcncsvr.home = function( axis )
     {
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MANUAL);
         lcncsvr.sendCommand("home","home",[ axis.toString() ]);
     };
-
+    
     lcncsvr.overrideLimits = function()
     {
         lcncsvr.sendCommand("override_limits","override_limits");
     }
-
+    
     lcncsvr.toggleMist = function()
     {
         var val;
@@ -860,7 +861,7 @@ define(function (require) {
             val = "MIST_ON";
         return lcncsvr.sendCommand("mist_toggle","mist",[val]);
     }
-
+    
     lcncsvr.setMist = function( onoff )
     {
         var val;
@@ -870,7 +871,7 @@ define(function (require) {
             val = "MIST_OFF";
         return lcncsvr.sendCommand("mist_toggle","mist",[val]);
     }
-
+    
     lcncsvr.toggleFlood = function()
     {
         var val;
@@ -880,7 +881,7 @@ define(function (require) {
             val = "FLOOD_ON";
         return lcncsvr.sendCommand("flood_toggle","flood",[val]);
     }
-
+    
     lcncsvr.setFlood = function( onoff )
     {
         var val;
@@ -890,7 +891,7 @@ define(function (require) {
             val = "FLOOD_OFF";
         return lcncsvr.sendCommand("flood_toggle","flood",[val]);
     }
-
+    
     lcncsvr.spindleForward = function() {
         return lcncsvr.sendCommand("spindle_forward","spindle",["SPINDLE_FORWARD"]);
     }
@@ -900,8 +901,8 @@ define(function (require) {
     lcncsvr.spindleReverse = function() {
         return lcncsvr.sendCommand("spindle_reverse","spindle",["SPINDLE_REVERSE"]);
     }
-
-
+    
+    
     lcncsvr.toggleSpindleBrake = function()
     {
         var val;
@@ -911,7 +912,7 @@ define(function (require) {
             val = "BRAKE_ENGAGE";
         return lcncsvr.sendCommand("spindle_brake_toggle","brake",[val]);
     }
-
+    
     lcncsvr.setSpindleBrake = function( onoff )
     {
         var val;
@@ -921,7 +922,7 @@ define(function (require) {
             val = "BRAKE_RELEASE";
         return lcncsvr.sendCommand("spindle_brake_set","brake",[val]);
     }
-
+    
     lcncsvr.loadTool = function(toolNum) {
         try {
             if(!lcncsvr.mdi("M654 T" + toolNum)) {
@@ -931,7 +932,7 @@ define(function (require) {
             console.log(ex);
         }
     }
-
+    
     lcncsvr.setToolTableFull = function( toolnum, zofs, xofs, diam, front, back, orient )
     {
         try {
@@ -942,53 +943,53 @@ define(function (require) {
         } catch (ex) {
             console.log(ex);
         }
-
+    
     }
-
+    
     lcncsvr.setToolTableZ = function( zOffset )
     {
         if (_.isNumber(zOffset))
             zOffset = zOffset.toFixed(6);
-
+    
         lcncsvr.mdi( "G10 L10 P" + lcncsvr.vars.tool_in_spindle.data() + " Z" + zOffset );
         lcncsvr.mdi( "G43" );
     }
-
+    
     lcncsvr.setToolTable = function( zOffset, diameter )
     {
         lcncsvr.mdi( "G10 L10 P" + lcncsvr.vars.tool_in_spindle.data() + "R" + (diameter/2) + " Z" + zOffset );
         lcncsvr.mdi( "G43" );
     }
-
+    
     lcncsvr.setToolNumber = function( toolNum )
     {
         if (!_.isNaN( parseInt( toolNum)))
             lcncsvr.mdi( "M6T" + parseInt(toolNum) );
     }
-
+    
     lcncsvr.clearLastError = function()
     {
         lcncsvr.sendCommand("clear_error","clear_error",[]);
     }
-
+    
     lcncsvr.check_for_updates = function() {
         lcncsvr.CheckingForUpdates(true);
         lcncsvr.sendCommandWhenReady("check_for_updates", "check_for_updates");
     }
-
+    
     lcncsvr.setVersion = function(version) {
         lcncsvr.SettingVersion(true);
         lcncsvr.sendCommandWhenReady("set_version", "set_version", [ version ]);
     }
-
+    
     lcncsvr.toggleV1V2RevP = function() {
         lcncsvr.sendCommandWhenReady("toggle_v1_v2revP", "toggle_v1_v2revP", []);
     };
-
+    
     lcncsvr.getINIConfig = function() {
         lcncsvr.socket.send(JSON.stringify({"id": "ini_config", "command": "get", "name": "config" }));
     }
-
+    
     lcncsvr.refreshSystemStatus = function() {
         lcncsvr.socket.send(JSON.stringify({"id": "system_status", "command": "get", "name": "system_status" }));
     }
@@ -1004,28 +1005,28 @@ define(function (require) {
         lcncsvr.sendCommandWhenReady("clear_ncfiles", "clear_ncfiles", []);
         lcncsvr.refreshSystemStatus();
     }
-
+    
     lcncsvr.getINIConfigParameter = function(section, parameter) {
         lcncsvr.socket.send(JSON.stringify({"id": "ini_config_parameter", "command": "get", "name": "config_item", "section": section, "parameter": parameter }));
     }
-
+    
     lcncsvr.setClientConfig = function( key, value )
     {
         lcncsvr.sendCommandWhenReady("cc","save_client_config",[key,value]);
     }
-
+    
     lcncsvr.getClientConfig = function()
     {
         lcncsvr.socket.send(JSON.stringify({"id": "client_config", "command": "get", "name": "client_config"}));
     }
-
+    
     lcncsvr.sendFileContentRequestOrNotify = function() {
         if (typeof(lcncsvr.vars.file_content.data()) == "string")
             lcncsvr.socket.send(JSON.stringify({"id": "file_content", "command": "get", "name": "file_content"}));
         else
             lcncsvr.vars.file_content.data.valueHasMutated();
     }
-
+    
     lcncsvr.sendBackplotRequestOrNotify = function () {
         var x;
         if (typeof(lcncsvr.vars.backplot_async.data()) == "string")
@@ -1033,20 +1034,64 @@ define(function (require) {
         else
             lcncsvr.vars.backplot_async.data.valueHasMutated();
     }
-
+    
     lcncsvr.deleteFile = function(filename) {
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
         lcncsvr.sendCommand("program_delete","program_delete",[filename]);
     }
-
+    
     lcncsvr.requestFileContent = function() {
         lcncsvr.socket.send(JSON.stringify({"id": "file_content", "command": "get", "name": "file_content"}));
     }
+    
+    lcncsvr.vars.chunkSize = 10000;
+    lcncsvr.vars.fileIdx = 0;
+    lcncsvr.vars.requestId = null;
+    lcncsvr.vars.listener = null;
+
+    lcncsvr.request = function() {
+        
+        listenerFactory = function(){ 
+            var isDead = false;
+            return function(){
+                if(isDead)
+                    return;
+
+                var msg = JSON.parse(event.data);
+                if((msg.id === lcncsvr.vars.requestId) && (msg.code === "?OK")){
+                    lcncsvr.vars.file_content.data.push(msg.data.split('\n'));
+                    if(msg.data.length === lcncsvr.vars.chunkSize){
+                        lcncsvr.vars.fileIdx += lcncsvr.vars.chunkSize;
+                        console.log('requesting fileIdx: ' + lcncsvr.vars.fileIdx);
+                        lcncsvr.sendCommand(lcncsvr.vars.requestId,"program_download_chunk",[lcncsvr.vars.fileIdx]);
+                    }
+                    else { 
+                        lcncsvr.cleanupRequest();
+                    }
+                }
+            }
+        }
+
+        if(lcncsvr.vars.listener !== null){
+            lcncsvr.cleanupRequest();
+        }
+
+        lcncsvr.vars.file_content.data([]);
+        lcncsvr.vars.listener = listenerFactory();
+        lcncsvr.vars.requestId = lcncsvr.vars.listener.id = Date.now();
+        lcncsvr.socket.addEventListener('message', lcncsvr.vars.listener);
+        lcncsvr.sendCommand(lcncsvr.vars.requestId,"program_download_chunk",[lcncsvr.vars.fileIdx]);
+    }
+
+    lcncsvr.cleanupRequest = function(){
+        lcncsvr.vars.listener.isDead = true;
+        lcncsvr.socket.removeEventListener('message', lcncsvr.vars.listener);
+        lcncsvr.vars.fileIdx = 0;
+        lcncsvr.vars.listener = null;
+    }
 
     lcncsvr.uploadGCode = function(filename, data) {
-        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
-        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
         lcncsvr.sendCommand("program_upload","program_upload",[filename, data]);
     }
 

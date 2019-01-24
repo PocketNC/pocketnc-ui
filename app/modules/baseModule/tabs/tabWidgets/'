@@ -55,7 +55,6 @@ define(function(require) {
             now = start;
             self.upload();
             $('#file_input').val(""); // clear file_input so same file can be reuploaded.
-            console.log('true');
             self.toggleProgress(true);
         }
         
@@ -110,26 +109,22 @@ define(function(require) {
             
             reader.readAsText(blob);
         }
-        
-       // this.toggleProgress = function(isTurningOn){
-       //     var e = document.getElementById("uploadDIV");
-       //     console.log('canceling');
-       //     console.log(e);
-       //     if(e !== null){
-       //         if(isTurningOn){
-       //             e.style.display = "block";
-       //         } else {
-       //             e.style.display = "none";
-       //         }
-       //     }
-       // }
-       // 
-       // this.cancelUpload = function(){
-       //     isCanceled = true;
-       //     self.toggleProgress(false);
-       // }
 
-       // $("#cancel").bind({click: self.cancelUpload() })
+        this.cancelUpload = function(){
+            isCanceled = true;
+            self.toggleProgress(false);
+        }
+
+        $("#cancel").bind({click: self.cancelUpload() })
+        
+        this.toggleProgress = function(isTurningOn){
+            var e = document.getElementById("uploadDIV");
+            if(isTurningOn){
+                e.style.display = "block";
+            } else {
+                e.style.display = "none";
+            }
+        }
 
         this.updateProgress = function(proportion){
             var bar = $('#uploadProgressBar');
