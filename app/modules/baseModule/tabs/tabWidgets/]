@@ -45,8 +45,8 @@ define(function(require) {
                     data: data,
                     stretchH: "last",
                     rowHeaders: true,
-                    colWidths: 900,
                     height: 400,
+                    colWidths: 90,
                     startCols: 1,
                     outsideClickDeselects: false,
                     columns: [
@@ -104,28 +104,35 @@ define(function(require) {
 
         }
 
-        self.fileId = 0;
-        self.fileContent = ""; 
         this.updateData = function( newfilecontent )
         {
-            let shouldRender = false;
-            
-            if(self.fileId !== newfilecontent.id){
-                self.fileId = newfilecontent.id;
-                self.fileContent = [];
-                shouldRender = true;
-            }
-
-            let newarr = _.zip(newfilecontent.data.split('\n'));
-            self.fileContent = self.fileContent.concat(newarr);
-            
+            console.log(newfilecontent);
             var ht = self.fileListTable.handsontable('getInstance');
-            shouldRender = shouldRender || (ht.rowOffset() > (ht.countRows() - 100));
-            shouldRender = shouldRender || newfilecontent.isEnd;
-            if(shouldRender){
-                ht.loadData(self.fileContent);
-                ht.render();
+            
+            if( newfilecontent.length === 0 )
+                ht.loadData([]);
+            else{
+                newfilecontent[0].forEach(function(line){
+                    ht.getData().push(line);
+                });
             }
+            
+            ht.render();
+            
+            console.log(ht.getData());
+
+            //var dat = _.zip(newfilecontent.split('\n'));
+            var dat = _.zip(newfilecontent);
+            //ht.loadData(dat);
+
+            var rh = [];
+            var rc = ht.countRows();
+            for (idx = 0; idx < rc; idx++)
+                rh.push(idx.toString());
+            ht.updateSettings({rowHeaders: rh});
+
+            ht.render();
+
             $("#jog_focus_handler").focus();
         }
 
