@@ -246,7 +246,7 @@ define(function (require) {
     lcncsvr.vars.file.data.subscribe( function(newval){ lcncsvr.socket.send(JSON.stringify({"id": "backplot_async", "command": "get", "name": "backplot_async"})); });
     lcncsvr.vars.file_content = { data: ko.observableArray([]), watched: false, local:true };
     lcncsvr.vars.fileFetchers = [];
-    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval){console.log('yo'); lcncsvr.request(); } }); 
+    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval){ lcncsvr.request(); } }); 
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
     lcncsvr.vars.board_revision = { data: ko.observable(""), watched: false };
@@ -1055,20 +1055,23 @@ define(function (require) {
         listenerFactory = function(){ 
             var isDead = false;
             return function(){
-                if(isDead)
+                if(isDead){
+                    console.log('Dead listener still active for some reason');
                     return;
+                }
 
                 var msg = JSON.parse(event.data);
                 if((msg.id === lcncsvr.vars.requestId) && (msg.code === "?OK")){
-                    lcncsvr.vars.file_content.data.push(msg.data.split('\n'));
+                    let isEnd = false;
                     if(msg.data.length === lcncsvr.vars.chunkSize){
                         lcncsvr.vars.fileIdx += lcncsvr.vars.chunkSize;
-                        console.log('requesting fileIdx: ' + lcncsvr.vars.fileIdx);
                         lcncsvr.sendCommand(lcncsvr.vars.requestId,"program_download_chunk",[lcncsvr.vars.fileIdx]);
                     }
                     else { 
+                        isEnd = true;
                         lcncsvr.cleanupRequest();
                     }
+                    lcncsvr.vars.file_content.data( { data: msg.data, id: lcncsvr.vars.requestId, isEnd: isEnd });
                 }
             }
         }
@@ -1077,9 +1080,9 @@ define(function (require) {
             lcncsvr.cleanupRequest();
         }
 
-        lcncsvr.vars.file_content.data([]);
         lcncsvr.vars.listener = listenerFactory();
         lcncsvr.vars.requestId = lcncsvr.vars.listener.id = Date.now();
+        lcncsvr.vars.file_content.data( { data: "", id: lcncsvr.vars.requestId, isEnd: false } );
         lcncsvr.socket.addEventListener('message', lcncsvr.vars.listener);
         lcncsvr.sendCommand(lcncsvr.vars.requestId,"program_download_chunk",[lcncsvr.vars.fileIdx]);
     }

@@ -6,15 +6,17 @@ define(function(require) {
 
 	var ViewModel = function(moduleContext) {
 
-		var self = this;
+	var self = this;
+        
         self.Panel = null;
         self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
-
-        var reader = {};
-        var newFile = {};
-        var chunkSize = 200000;
-        var overwrite = false;
-        var isCanceled = false;
+        
+        self.reader = {};
+        self.newFile = {};
+        self.chunkSize = 200000;
+        self.overwrite = false;
+        self.isCanceled = false;
+        self.statusMsg = ko.observable();
         
         this.getTemplate = function()
         {
@@ -42,95 +44,104 @@ define(function(require) {
 
         this.testFileSelect = function( evt )
         {
-            overwrite = false;
-            cancelUpload = false;
-            var files = evt.target.files; // FileList object
-            reader = new FileReader();
-            newFile = files[0];
             
-            //If a file of the same name is already present, delete it
-            //self.linuxCNCServer.deleteFile(newFile.name);
-
-            start = Date.now();
-            now = start;
+            self.overwrite = false;
+            self.isCanceled = false;
+            var files = evt.target.files; // FileList object
+            self.reader = new FileReader();
+            self.newFile = files[0];
+            let status = "Uploading " + self.newFile.name + "\n"+ " " + self.humanizeFileSize(self.newFile.size);
+            self.statusMsg(status);
             self.upload();
-            $('#file_input').val(""); // clear file_input so same file can be reuploaded.
-            console.log('true');
-            self.toggleProgress(true);
+            //$('#file_input').val(""); // clear file_input so same file can be reuploaded.
+            $('#file_input').val('').attr('disabled', 'disabled').siblings().css('color', 'grey');
+            self.toggleUploadDiv(true);
         }
         
         this.upload = function(startIdx=0)
         {
-            var nextIdx = startIdx + chunkSize + 1;
-            var blob = newFile.slice( startIdx, nextIdx );
+            var nextIdx = startIdx + self.chunkSize + 1;
+            var blob = self.newFile.slice( startIdx, nextIdx );
        
-            reader.onload = (function(theChunk) {
+            self.reader.onload = (function(theChunk) {
                 
                 return function(e) {
                     
                     function listenMsg(event){
-                        if(isCanceled)
+                        if(self.isCanceled){
+                            self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
                             return;
+                        }
 
                         var msg = JSON.parse(event.data);
                         if(msg.id === "program_upload_chunk"){
-                            console.log(msg);
                             if(msg.code === "?OK"){
                                 
                                 self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
                                  
                                 if(msg.data === "occupied"){
-                                    overwrite = true;
-                                    $('#fileOverwriteFile').html(newFile.name);
+                                    self.overwrite = true;
+                                    $('#fileOverwriteFile').html(self.newFile.name);
                                     $('#fileOverwriteModal').modal('show'); 
                                     return;
                                 }
 
-                                self.updateProgress(nextIdx / newFile.size); 
-                                if(nextIdx < newFile.size){
+                                self.updateProgress(nextIdx / self.newFile.size); 
+                                if(nextIdx < self.newFile.size){
                                     self.upload(nextIdx);
                                 }
                                 else{
-                                    //self.download(newFile.name);
-                                    //self.linuxCNCServer.requestFileContent();
+                                    let newStatus = 'Finished uploading ' + self.newFile.name;
+                                    if(self.overwrite)
+                                        newStatus = newStatus + '</br>Overwrote existing file';
+                                    self.statusMsg(newStatus);
+                                    $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
                                 }
                             }
                             else if(msg.code === "?Error executing command"){
-                                window.alert("Error uploading file");
+                                let newStatus = 'Error uploading ' + self.newFile.name;
+                                self.statusMsg(newStatus);
+                                self.isCanceled = true;
+                                $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
                             }
                         }
                     }
                     
                     self.linuxCNCServer.socket.addEventListener('message', listenMsg);
-                    var start = startIdx === 0;
-                    var end = nextIdx > newFile.size;
-                    self.linuxCNCServer.uploadChunkGCode(newFile.name, e.target.result, start, end, overwrite);
+                    let start = (startIdx === 0);
+                    let end = (nextIdx > self.newFile.size);
+                    self.linuxCNCServer.uploadChunkGCode(self.newFile.name, e.target.result, start, end, self.overwrite);
                 }
             })(blob);
             
-            reader.readAsText(blob);
+            self.reader.readAsText(blob);
         }
         
-       // this.toggleProgress = function(isTurningOn){
-       //     var e = document.getElementById("uploadDIV");
-       //     console.log('canceling');
-       //     console.log(e);
-       //     if(e !== null){
-       //         if(isTurningOn){
-       //             e.style.display = "block";
-       //         } else {
-       //             e.style.display = "none";
-       //         }
-       //     }
-       // }
-       // 
-       // this.cancelUpload = function(){
-       //     isCanceled = true;
-       //     self.toggleProgress(false);
-       // }
+        this.toggleUploadDiv = function(isTurningOn){
+            var e = document.getElementById("uploadDiv");
+            if(e !== null){
+                if(isTurningOn){
+                    e.style.display = "block";
+                } else {
+                    e.style.display = "none";
+                }
+            }
+        }
+       
+        this.cancelUpload = function(){
+            self.isCanceled = true;
+            self.statusMsg("Upload Canceled")
+            setTimeout(function() { 
+                self.toggleUploadDiv(false) 
+                $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
+            }, 1000);
+        }
 
-       // $("#cancel").bind({click: self.cancelUpload() })
-
+        this.humanizeFileSize = function(size) {
+            var i = size == 0 ? 0 : Math.floor( Math.log(size) / Math.log(1000) );
+            return ( size / Math.pow(1000, i) ).toFixed(2) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
+        }
+        
         this.updateProgress = function(proportion){
             var bar = $('#uploadProgressBar');
             percent = Math.min((proportion * 100).toFixed(1), 100);
@@ -154,11 +165,11 @@ define(function(require) {
                   }
                   }
                   }
-            var sizeRead = 0, fileSize = chunkSize;
+            var sizeRead = 0, fileSize = self.chunkSize;
             self.linuxCNCServer.socket.addEventListener('message', listenMsg);
             do{
                 var ret = self.linuxCNCServer.requestFileContent();
-                sizeRead += chunkSize;
+                sizeRead += self.chunkSize;
             } while (sizeRead < fileSize)     
         }
         

@@ -1,6 +1,24 @@
+<style>
+@keyframes spinner {
+    0% {
+        transform: translate3d(-50%, -50%, 0) rotate(0deg);
+    }
+    100% {
+        transform: translate3d(-50%, -50%, 0) rotate(360deg);
+    }
+}
+
+.spinner {
+}
+</style>
 <div class="well well-with-label">
 
         <span class="well-label"><span>{{nls.FileTitle}}</span></span>
+        
+        <div class="spinner-grow" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+
 
         <div class="FileListTable"></div>
 

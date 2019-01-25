@@ -105,7 +105,7 @@ define(function(require) {
         }
 
         self.fileId = 0;
-        self.fileContent = ""; 
+        self.fileContent = []; 
         this.updateData = function( newfilecontent )
         {
             let shouldRender = false;
@@ -115,10 +115,16 @@ define(function(require) {
                 self.fileContent = [];
                 shouldRender = true;
             }
+            let isData = (newfilecontent.data) && (newfilecontent.data.length > 0); 
+            if(isData){  
+                let newarr = _.zip(newfilecontent.data.split('\n'));
+                let isLastLineBroken = self.fileContent.length > 0 && self.fileContent[self.fileContent.length - 1] !== "";  
+                if( isLastLineBroken ){
+                    self.fileContent[self.fileContent.length - 1] = [self.fileContent[self.fileContent.length - 1] + newarr.shift()];
+                }
+                self.fileContent = self.fileContent.concat( newarr );
+            }
 
-            let newarr = _.zip(newfilecontent.data.split('\n'));
-            self.fileContent = self.fileContent.concat(newarr);
-            
             var ht = self.fileListTable.handsontable('getInstance');
             shouldRender = shouldRender || (ht.rowOffset() > (ht.countRows() - 100));
             shouldRender = shouldRender || newfilecontent.isEnd;
