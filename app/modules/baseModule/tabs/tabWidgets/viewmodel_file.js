@@ -104,8 +104,10 @@ define(function(require) {
 
         }
 
+        //This id will be set everytime the G code program opened in Rockhopper changes, and the file's contents begin downloading to the UI
         self.fileId = 0;
-        self.fileContent = []; 
+        self.fileContent = [];
+
         this.updateData = function( newfilecontent )
         {
             let shouldRender = false;
@@ -114,24 +116,34 @@ define(function(require) {
                 self.fileId = newfilecontent.id;
                 self.fileContent = [];
                 shouldRender = true;
+                var spinner = document.getElementById("download-spinner");
+                spinner.style.display = "";
+
             }
-            let isData = (newfilecontent.data) && (newfilecontent.data.length > 0); 
+            
+            let isData = (newfilecontent.data) && (newfilecontent.data.length > 0);
             if(isData){  
                 let newarr = _.zip(newfilecontent.data.split('\n'));
-                let isLastLineBroken = self.fileContent.length > 0 && self.fileContent[self.fileContent.length - 1] !== "";  
-                if( isLastLineBroken ){
-                    self.fileContent[self.fileContent.length - 1] = [self.fileContent[self.fileContent.length - 1] + newarr.shift()];
-                }
+                if(self.fileContent.length > 0)
+                    self.fileContent[self.fileContent.length - 1] = [self.fileContent.pop()[0] + newarr.shift()[0]];
                 self.fileContent = self.fileContent.concat( newarr );
             }
 
             var ht = self.fileListTable.handsontable('getInstance');
+            
+            if(newfilecontent.isEnd){
+                shouldRender = true;
+                var spinner = document.getElementById("download-spinner");
+                spinner.style.display = "none";
+            }
+
             shouldRender = shouldRender || (ht.rowOffset() > (ht.countRows() - 100));
-            shouldRender = shouldRender || newfilecontent.isEnd;
+            
             if(shouldRender){
                 ht.loadData(self.fileContent);
                 ht.render();
             }
+            
             $("#jog_focus_handler").focus();
         }
 

@@ -10,6 +10,16 @@
 .file_hover:hover .btn {
     color: #333333;
 }
+#upload
+{
+    text-align: center;
+}
+.progress, .cancel{
+    display: inline;
+}
+.cancel{
+    float: right;
+}
 </style>
 <div class="well well-with-label">
 
@@ -53,12 +63,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="click: cancelUpload()" >Cancel</button>
-        <button type="button" class="btn btn-danger" data-dismiss="modal" 
-            data-bind="click: function() { 
-                                            var newStatus = statusMsg() + '<br />Will overwrite existing file on completion.';
-                                            statusMsg(newStatus); 
-                                            upload();
-                                         }">Overwrite</button>
+        <button type="button" class="btn btn-danger" data-dismiss="modal" data-bind="click: function() { let e = document.getElementById('upload'); e.setAttribute('title', e.getAttribute('title') + ' - Overwrite' ); upload(); }">Overwrite</button>
       </div>
     </div>
   </div>
@@ -98,14 +103,13 @@
 
                 </tbody>                
             </table>
-            <div id="uploadDiv" style="display: none;">
-                <div class="progress" align="left">
-                    <div class="bar" id="uploadProgressBar"></div>
+            <div id="upload" style="display: none;">
+                <div style="width: 75%">
+                    <div class="progress" style="height: 32px; display: flex">
+                        <div class="bar" id="upload-bar"></div>
+                    </div>
                 </div>
-                <div id="status" align="left">
-                    <span data-bind="html: statusMsg"></span>
-                </div>
-                <div id="cancel" class="cancel" align="right">
+                <div id="cancel" class="cancel">
                     <button data-bind="click: cancelUpload" id="cancel-btn" type="button" class="btn btn-warning">Cancel</button>
                 </div>
             </div>

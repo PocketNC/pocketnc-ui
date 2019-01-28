@@ -17,7 +17,8 @@ define(function(require) {
         self.overwrite = false;
         self.isCanceled = false;
         self.statusMsg = ko.observable();
-        
+        self.lastReplyTime = 0;
+
         this.getTemplate = function()
         {
             return template;
@@ -50,10 +51,9 @@ define(function(require) {
             var files = evt.target.files; // FileList object
             self.reader = new FileReader();
             self.newFile = files[0];
-            let status = "Uploading " + self.newFile.name + "\n"+ " " + self.humanizeFileSize(self.newFile.size);
-            self.statusMsg(status);
+            let hoverText = self.newFile.name + " " + self.humanizeFileSize(self.newFile.size);
+            document.getElementById("upload").setAttribute("title", hoverText);
             self.upload();
-            //$('#file_input').val(""); // clear file_input so same file can be reuploaded.
             $('#file_input').val('').attr('disabled', 'disabled').siblings().css('color', 'grey');
             self.toggleUploadDiv(true);
         }
@@ -62,7 +62,11 @@ define(function(require) {
         {
             var nextIdx = startIdx + self.chunkSize + 1;
             var blob = self.newFile.slice( startIdx, nextIdx );
-       
+            setTimeout(function() {
+                if((Date.now() - self.lastReplyTime) > 3000){
+                    self.cancelUpload();
+                }
+            }, 4000);
             self.reader.onload = (function(theChunk) {
                 
                 return function(e) {
@@ -72,9 +76,11 @@ define(function(require) {
                             self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
                             return;
                         }
+                        self.lastReplyTime = Date.now();
 
                         var msg = JSON.parse(event.data);
                         if(msg.id === "program_upload_chunk"){
+                            self.isConnected = true;
                             if(msg.code === "?OK"){
                                 
                                 self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
@@ -95,6 +101,7 @@ define(function(require) {
                                     if(self.overwrite)
                                         newStatus = newStatus + '</br>Overwrote existing file';
                                     self.statusMsg(newStatus);
+                                    self.linuxCNCServer.request();
                                     $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
                                 }
                             }
@@ -106,6 +113,7 @@ define(function(require) {
                             }
                         }
                     }
+
                     
                     self.linuxCNCServer.socket.addEventListener('message', listenMsg);
                     let start = (startIdx === 0);
@@ -118,10 +126,10 @@ define(function(require) {
         }
         
         this.toggleUploadDiv = function(isTurningOn){
-            var e = document.getElementById("uploadDiv");
+            var e = document.getElementById("upload");
             if(e !== null){
                 if(isTurningOn){
-                    e.style.display = "block";
+                    e.style.display = "flex";
                 } else {
                     e.style.display = "none";
                 }
@@ -143,7 +151,7 @@ define(function(require) {
         }
         
         this.updateProgress = function(proportion){
-            var bar = $('#uploadProgressBar');
+            var bar = $('#upload-bar');
             percent = Math.min((proportion * 100).toFixed(1), 100);
             percent = percent + '%';
             bar.width(percent);
