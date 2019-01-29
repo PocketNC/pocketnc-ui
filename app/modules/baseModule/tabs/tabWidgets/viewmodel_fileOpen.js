@@ -16,8 +16,7 @@ define(function(require) {
         self.chunkSize = 200000;
         self.overwrite = false;
         self.isCanceled = false;
-        self.statusMsg = ko.observable();
-        self.lastReplyTime = 0;
+        self.timer = {};
 
         this.getTemplate = function()
         {
@@ -45,28 +44,33 @@ define(function(require) {
 
         this.testFileSelect = function( evt )
         {
-            
             self.overwrite = false;
             self.isCanceled = false;
             var files = evt.target.files; // FileList object
             self.reader = new FileReader();
             self.newFile = files[0];
+            self.upload();
+            
+            $('#file_input').val('').attr('disabled', 'disabled').siblings().css('color', 'grey');
             let hoverText = self.newFile.name + " " + self.humanizeFileSize(self.newFile.size);
             document.getElementById("upload").setAttribute("title", hoverText);
-            self.upload();
-            $('#file_input').val('').attr('disabled', 'disabled').siblings().css('color', 'grey');
+            self.updateProgress(0);
             self.toggleUploadDiv(true);
+            self.timer = setInterval(function() { self.connectionCheck() }, 3000);
         }
         
+        this.connectionCheck = function() {
+            if( !self.linuxCNCServer.server_logged_in() ){
+                $.pnotify({title: "Alert", text: 'Connection to server lost', type: "Alert"});
+                self.cancelUpload();
+            }
+        }
+
         this.upload = function(startIdx=0)
         {
             var nextIdx = startIdx + self.chunkSize + 1;
             var blob = self.newFile.slice( startIdx, nextIdx );
-            setTimeout(function() {
-                if((Date.now() - self.lastReplyTime) > 3000){
-                    self.cancelUpload();
-                }
-            }, 4000);
+
             self.reader.onload = (function(theChunk) {
                 
                 return function(e) {
@@ -76,7 +80,6 @@ define(function(require) {
                             self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
                             return;
                         }
-                        self.lastReplyTime = Date.now();
 
                         var msg = JSON.parse(event.data);
                         if(msg.id === "program_upload_chunk"){
@@ -97,17 +100,26 @@ define(function(require) {
                                     self.upload(nextIdx);
                                 }
                                 else{
-                                    let newStatus = 'Finished uploading ' + self.newFile.name;
+                                    let newStatus = '';
                                     if(self.overwrite)
-                                        newStatus = newStatus + '</br>Overwrote existing file';
-                                    self.statusMsg(newStatus);
+                                        newStatus = 'Succesfully overwrote file ' + self.newFile.name;
+                                    else
+                                        newStatus = 'Succesfully uploaded ' + self.newFile.name;
+                                    $.pnotify({title: "Success", text: newStatus, type: "success"});
+                                    
+                                    setTimeout(function() { 
+                                        self.toggleUploadDiv(false) 
+                                        $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
+                                    }, 1000);
+
+                                    clearInterval(self.timer);
                                     self.linuxCNCServer.request();
-                                    $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
                                 }
                             }
                             else if(msg.code === "?Error executing command"){
-                                let newStatus = 'Error uploading ' + self.newFile.name;
-                                self.statusMsg(newStatus);
+                                let newStatus = 'Error uploading file ' + self.newFile.name;
+                                $.pnotify({title: "Error", text: newStatus, type: "error"});
+                                self.cancelUpload();
                                 self.isCanceled = true;
                                 $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
                             }
@@ -138,7 +150,9 @@ define(function(require) {
        
         this.cancelUpload = function(){
             self.isCanceled = true;
-            self.statusMsg("Upload Canceled")
+            let text = 'Canceled upload of ' + self.newFile.name;
+            $.pnotify({title: "Upload canceled", text: text, type: "info"});
+            clearInterval(self.timer);
             setTimeout(function() { 
                 self.toggleUploadDiv(false) 
                 $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
@@ -157,31 +171,8 @@ define(function(require) {
             bar.width(percent);
             bar.html(percent); 
         }
-
-        this.download = function(filename){
-            function listenMsg(event){
-            var msg = JSON.parse(event.data);
-                  if(msg.id === "program_download_chunk"){
-                  console.log(msg);
-                  if(msg.code === "?OK"){
-                    
-                    self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
-                     
-                  }
-                  else if(msg.code === "?Error executing command"){
-                    window.alert("Error uploading file");
-                  }
-                  }
-                  }
-            var sizeRead = 0, fileSize = self.chunkSize;
-            self.linuxCNCServer.socket.addEventListener('message', listenMsg);
-            do{
-                var ret = self.linuxCNCServer.requestFileContent();
-                sizeRead += self.chunkSize;
-            } while (sizeRead < fileSize)     
-        }
         
-	this.initialize = function( Panel ) {
+        this.initialize = function( Panel ) {
             if (self.Panel == null)
             {
                 self.Panel = Panel;

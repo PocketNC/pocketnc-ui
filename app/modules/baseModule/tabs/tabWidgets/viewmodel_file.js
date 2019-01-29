@@ -112,28 +112,33 @@ define(function(require) {
         {
             let shouldRender = false;
             
-            if(self.fileId !== newfilecontent.id){
+            if(self.fileId !== newfilecontent.id && newfilecontent.id !== undefined){
                 self.fileId = newfilecontent.id;
                 self.fileContent = [];
                 shouldRender = true;
-                var spinner = document.getElementById("download-spinner");
-                spinner.style.display = "";
-
+                $('#download-spinner').css('display', '');
             }
             
             let isData = (newfilecontent.data) && (newfilecontent.data.length > 0);
             if(isData){  
+                if(self.fileContent.length === 0)
+                    shouldRender = true;
+            
                 let newarr = _.zip(newfilecontent.data.split('\n'));
                 if(self.fileContent.length > 0)
                     self.fileContent[self.fileContent.length - 1] = [self.fileContent.pop()[0] + newarr.shift()[0]];
-                self.fileContent = self.fileContent.concat( newarr );
+                
+                let i;
+                for(i = 0; i < newarr.length; i++){
+                    self.fileContent.push(newarr[i]);
+                }
             }
 
-            var ht = self.fileListTable.handsontable('getInstance');
+            let ht = self.fileListTable.handsontable('getInstance');
             
             if(newfilecontent.isEnd){
                 shouldRender = true;
-                var spinner = document.getElementById("download-spinner");
+                let spinner = document.getElementById("download-spinner");
                 spinner.style.display = "none";
             }
 

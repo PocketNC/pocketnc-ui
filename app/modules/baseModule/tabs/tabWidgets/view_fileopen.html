@@ -10,10 +10,6 @@
 .file_hover:hover .btn {
     color: #333333;
 }
-#upload
-{
-    text-align: center;
-}
 .progress, .cancel{
     display: inline;
 }
@@ -62,7 +58,7 @@
           Are you sure you want to overwrite <span id="fileOverwriteFile">insert file here</span>? This operation cannot be undone.
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="click: cancelUpload()" >Cancel</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="click: function() { cancelUpload() }" >Cancel</button>
         <button type="button" class="btn btn-danger" data-dismiss="modal" data-bind="click: function() { let e = document.getElementById('upload'); e.setAttribute('title', e.getAttribute('title') + ' - Overwrite' ); upload(); }">Overwrite</button>
       </div>
     </div>
@@ -113,7 +109,8 @@
                     <button data-bind="click: cancelUpload" id="cancel-btn" type="button" class="btn btn-warning">Cancel</button>
                 </div>
             </div>
-        </div>
+       
+       </div>
     </div>
 
 </div>
