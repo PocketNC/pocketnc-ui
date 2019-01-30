@@ -71,9 +71,7 @@ define(function(require) {
             var nextIdx = startIdx + self.chunkSize + 1;
             var blob = self.newFile.slice( startIdx, nextIdx );
 
-            self.reader.onload = (function(theChunk) {
-                
-                return function(e) {
+            self.reader.onload = function(e) {
                     
                     function listenMsg(event){
                         if(self.isCanceled){
@@ -131,8 +129,7 @@ define(function(require) {
                     let start = (startIdx === 0);
                     let end = (nextIdx > self.newFile.size);
                     self.linuxCNCServer.uploadChunkGCode(self.newFile.name, e.target.result, start, end, self.overwrite);
-                }
-            })(blob);
+                };
             
             self.reader.readAsText(blob);
         }
