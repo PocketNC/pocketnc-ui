@@ -1,10 +1,12 @@
 <div class="well well-with-label">
 
-        <span class="well-label"><span>{{nls.FileTitle}}</span>
-            <span id="download-spinner" style="display:none">
+        <span class="well-label">
+            <span style="float: left; width: 20%; display: list-item;"></span>
+            <span id="download-spinner" style="visibility:hidden; float: right; width: 20%">
                 <i class="icon icon-spinner icon-spin" title="Downloading file"></i>
                 <span data-bind="text: linuxCNCServer.vars.downloadProgress"></span><span>% downloaded</span>
             </span>
+            <span>{{nls.FileTitle}}</span>
         </span>
 
         <div class="FileListTable"></div>

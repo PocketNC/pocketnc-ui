@@ -13,7 +13,7 @@ define(function(require) {
 
         self.currentLine = 0;
         self.currentLineByte = 0;
-
+        self.downloadProgress = ko.observable(0);
         this.getTemplate = function()
         {
             return template;
@@ -83,8 +83,6 @@ define(function(require) {
                 // monitor file contents
                 self.linuxCNCServer.vars.file_content.data.subscribe( self.updateData );
                 self.linuxCNCServer.ui_motion_line.subscribe( function(newval){ self.motionLineUpdateInProgress=true; self.updateDisplayLine(newval); self.motionLineUpdateInProgress=false; });
-                
-
 
                 self.fileListTable.dblclick( function(){ self.setMotionLineToSelected(); } );
 
@@ -116,7 +114,7 @@ define(function(require) {
                 self.fileId = newfilecontent.id;
                 self.fileContent = [];
                 shouldRender = true;
-                $('#download-spinner').css('display', '');
+                $('#download-spinner').css('visibility', 'visible');
             }
             
             let isData = (newfilecontent.data) && (newfilecontent.data.length > 0);
@@ -138,8 +136,7 @@ define(function(require) {
             
             if(newfilecontent.isEnd){
                 shouldRender = true;
-                let spinner = document.getElementById("download-spinner");
-                spinner.style.display = "none";
+                $('#download-spinner').css('visibility', 'hidden');
             }
 
             shouldRender = shouldRender || (ht.rowOffset() > (ht.countRows() - 100));
