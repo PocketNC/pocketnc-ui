@@ -147,9 +147,8 @@ define(function(require) {
             if(shouldRender){
                 ht.loadData(self.fileContent);
                 ht.render();
+                $("#jog_focus_handler").focus();
             }
-            
-            $("#jog_focus_handler").focus();
         }
 
         this.updateDisplayLine = function( lineNum )
