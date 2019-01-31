@@ -1057,8 +1057,7 @@ define(function (require) {
         lcncsvr.sendCommand("program_get_size", "program_get_size", []);
     }
 
-    //at the moment the corresponding chunk size in Rockhopper is hard coded to 10000 
-    lcncsvr.vars.chunkSize = 10000;
+    lcncsvr.vars.chunkSize = 100000;
     lcncsvr.vars.fileIdx = 0;
     lcncsvr.vars.downloadProgress = ko.observable(0);
     lcncsvr.vars.requestId = null;
@@ -1080,7 +1079,7 @@ define(function (require) {
                     if(msg.data.length === lcncsvr.vars.chunkSize){
                         lcncsvr.vars.fileIdx += lcncsvr.vars.chunkSize;
                         lcncsvr.vars.downloadProgress((100 * lcncsvr.vars.fileIdx / lcncsvr.vars.fileSize).toFixed(0));
-                        lcncsvr.sendCommand(lcncsvr.vars.requestId,"program_download_chunk",[lcncsvr.vars.fileIdx]);
+                        lcncsvr.downloadChunkGCode();
                     }
                     else { 
                         isEnd = true;
@@ -1099,7 +1098,7 @@ define(function (require) {
         lcncsvr.vars.requestId = lcncsvr.vars.listener.id = Date.now();
         lcncsvr.vars.file_content.data( { data: "", id: lcncsvr.vars.requestId, isEnd: false, percent: 0 } );
         lcncsvr.socket.addEventListener('message', lcncsvr.vars.listener);
-        lcncsvr.sendCommand(lcncsvr.vars.requestId,"program_download_chunk",[lcncsvr.vars.fileIdx]);
+        lcncsvr.downloadChunkGCode();
     }
 
     lcncsvr.cleanupRequest = function(){
@@ -1114,17 +1113,13 @@ define(function (require) {
     }
 
     lcncsvr.uploadChunkGCode = function(filename, data, start, end, ovw) {
-        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
-        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
         lcncsvr.sendCommand("program_upload_chunk","program_upload_chunk",[filename, data, start, end, ovw]);
     }
 
-    lcncsvr.downloadChunkGCode = function(filename, start, size){
-        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
-        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
-        lcncsver.sendCommand("program_download_chunk","program_download_chunk",[filename,start,end]);
+    lcncsvr.downloadChunkGCode = function() {
+        lcncsvr.sendCommand(lcncsvr.vars.requestId, "program_download_chunk",[lcncsvr.vars.fileIdx, lcncsvr.vars.chunkSize]);
     }
-
+    
     lcncsvr.sendAllWatchRequests = function () {
         try {
             var id;

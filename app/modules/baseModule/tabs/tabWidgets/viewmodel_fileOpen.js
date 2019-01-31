@@ -95,6 +95,11 @@ define(function(require) {
 
                                 self.updateProgress(nextIdx / self.newFile.size); 
                                 if(nextIdx < self.newFile.size){
+                                    isLastChunk = (nextIdx + self.chunkSize) > self.newFile.size;
+                                    if( isLastChunk ){
+                                        self.linuxCNCServer.setRmtMode(self.linuxCNCServer.TASK_MODE_MDI);
+                                        self.linuxCNCServer.setRmtMode(self.linuxCNCServer.TASK_MODE_AUTO);
+                                    }
                                     self.upload(nextIdx);
                                 }
                                 else{
