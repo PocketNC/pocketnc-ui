@@ -2,9 +2,9 @@
 
         <span class="well-label">
             <span style="float: left; width: 20%; display: list-item;"></span>
-            <span id="download-spinner" style="visibility:hidden; float: right; width: 20%">
-                <i class="icon icon-spinner icon-spin" title="Downloading file"></i>
-                <span data-bind="text: linuxCNCServer.vars.downloadProgress"></span><span>% downloaded</span>
+            <span id="download-spinner" title="Fetching file contents from PocketNC" style="visibility:hidden; float: right; width: 20%; text-align: right; padding-right: 0.5em;">
+                <i class="icon icon-spinner icon-spin"></i>
+                <span data-bind="text: linuxCNCServer.vars.downloadProgress"></span><span>%</span>
             </span>
             <span>{{nls.FileTitle}}</span>
         </span>
