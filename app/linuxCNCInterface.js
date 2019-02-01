@@ -245,7 +245,7 @@ define(function (require) {
     lcncsvr.vars.backplot_async = { data: ko.observable(""), watched: false, convert_to_json: true, local:true };
     lcncsvr.vars.file.data.subscribe( function(newval){ lcncsvr.socket.send(JSON.stringify({"id": "backplot_async", "command": "get", "name": "backplot_async"})); });
     lcncsvr.vars.file_content = { data: ko.observableArray([]), watched: false, local:true };
-    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval){ lcncsvr.getFileSize(); lcncsvr.requestFileContent(100000); } }); 
+    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval){  lcncsvr.requestFileContent(100000); } }); 
 
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
@@ -1040,26 +1040,15 @@ define(function (require) {
         lcncsvr.sendCommand("program_delete","program_delete",[filename]);
     }
 
-    lcncsvr.getFileSize = function() {
-        var sizeListener = function(){
-            var msg = JSON.parse(event.data);
-            if((msg.id === "program_get_size") && (msg.code === "?OK")){
-                lcncsvr.vars.fileSize = parseInt(msg.data);
-                lcncsvr.socket.removeEventListener('message', sizeListener);
-            }
-        }
-        lcncsvr.socket.addEventListener('message', sizeListener);
-        lcncsvr.sendCommand("program_get_size", "program_get_size", []);
-    }
-
-    lcncsvr.vars.fileSize = 0;
     lcncsvr.vars.downloadProgress = ko.observable(0);
+    lcncsvr.vars.listener = null;
 
     lcncsvr.requestFileContent = function(chunkSize) {
         
-        listenerFactory = function(_id, _chunkSize){
+        listenerFactory = function(_id, _chunkSize, _fileSize){
             let id = _id;
             let chunkSize = _chunkSize;
+            let fileSize = _fileSize;
             
             let idx = 0;
             let isEnd = false;
@@ -1074,21 +1063,41 @@ define(function (require) {
                 if((msg.id === id) && (msg.code === "?OK")){
                     if(msg.data.length === chunkSize){
                         idx += chunkSize;
-                        lcncsvr.vars.downloadProgress((100 * idx / lcncsvr.vars.fileSize).toFixed(0));
+                        lcncsvr.vars.downloadProgress((100 * idx / fileSize).toFixed(0));
                         lcncsvr.downloadChunkGCode(id, idx, chunkSize);
                     }
                     else { 
                         isEnd = true;
+                        lcncsvr.socket.removeEventListener('message', lcncsvr.vars.listener);
                     }
                     lcncsvr.vars.file_content.data( { data: msg.data, id: id, isEnd: isEnd });
                 }
             }
         }
-        let id = Date.now();
-        let listener = listenerFactory(id, chunkSize);
-        lcncsvr.vars.file_content.data( { data: "", id: id, isEnd: false, percent: 0 } );
-        lcncsvr.socket.addEventListener('message', listener);
-        lcncsvr.downloadChunkGCode(id, 0, chunkSize);
+
+        startDownload = function() {
+            if(lcncsvr.vars.listener){
+                 lcncsvr.socket.removeEventListener('message', lcncsvr.vars.listener);
+            }
+
+            let id = Date.now();
+            lcncsvr.vars.listener = listenerFactory(id, chunkSize, fileSize);
+            lcncsvr.vars.file_content.data( { data: "", id: id, isEnd: false, percent: 0 } );
+            lcncsvr.socket.addEventListener('message', lcncsvr.vars.listener);
+            lcncsvr.downloadChunkGCode(id, 0, chunkSize);
+        }
+        
+        let fileSize = Number.MAX_VALUE;
+        var sizeListener = function(){
+            var msg = JSON.parse(event.data);
+            if((msg.id === "program_get_size") && (msg.code === "?OK")){
+                fileSize = parseInt(msg.data);
+                lcncsvr.socket.removeEventListener('message', sizeListener);
+                startDownload();
+            }
+        }
+        lcncsvr.socket.addEventListener('message', sizeListener);
+        lcncsvr.sendCommand("program_get_size", "program_get_size", []);
     }
 
     lcncsvr.uploadGCode = function(filename, data) {

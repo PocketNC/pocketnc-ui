@@ -108,6 +108,9 @@ define(function(require) {
 
         this.updateData = function( newfilecontent )
         {
+            if(newfilecontent.id < self.fileId){
+                return;
+            }
             let shouldRender = false;
             
             if(self.fileId !== newfilecontent.id && newfilecontent.id !== undefined){
