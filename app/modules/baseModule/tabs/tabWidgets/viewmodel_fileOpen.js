@@ -13,11 +13,13 @@ define(function(require) {
         
         self.reader = {};
         self.newFile = {};
+        self.fileName = ko.observable("");
         self.chunkSize = 200000;
         self.overwrite = false;
         self.isCanceled = false;
         self.timer = {};
         self.isUploading = ko.observable(false);
+        self.uploadPercent = ko.observable(0);
 
         this.getTemplate = function()
         {
@@ -51,9 +53,10 @@ define(function(require) {
             var files = evt.target.files; // FileList object
             self.reader = new FileReader();
             self.newFile = files[0];
+            self.fileName(self.newFile.name);
             self.upload();
             
-            $('#file_input').val('').siblings().css('color', 'grey');
+            $('#file_input').val('');
             var hoverText = self.newFile.name + " " + self.humanizeFileSize(self.newFile.size);
             document.getElementById("upload").setAttribute("title", hoverText);
             self.updateProgress(0);
@@ -90,7 +93,6 @@ define(function(require) {
                              
                             if(msg.data === "occupied"){
                                 self.overwrite = true;
-                                $('#fileOverwriteFile').html(self.newFile.name);
                                 $('#fileOverwriteModal').modal('show'); 
                                 return;
                             }
@@ -114,7 +116,6 @@ define(function(require) {
                                 
                                 setTimeout(function() { 
                                     self.toggleUploadDiv(false) 
-                                    $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
                                 }, 1000);
 
                                 clearInterval(self.timer);
@@ -129,7 +130,6 @@ define(function(require) {
                             $.pnotify({title: "Error", text: newStatus, type: "error"});
                             self.cancelUpload();
                             self.isCanceled = true;
-                            $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
                         }
                     }
                 }
@@ -163,7 +163,6 @@ define(function(require) {
             clearInterval(self.timer);
             setTimeout(function() { 
                 self.toggleUploadDiv(false) 
-                $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
             }, 1000);
         }
 
@@ -171,13 +170,9 @@ define(function(require) {
             var i = size == 0 ? 0 : Math.floor( Math.log(size) / Math.log(1000) );
             return ( size / Math.pow(1000, i) ).toFixed(2) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
         }
-        
+       
         this.updateProgress = function(proportion){
-            var bar = $('#upload-bar');
-            percent = Math.min((proportion * 100).toFixed(1), 100);
-            percent = percent + '%';
-            bar.width(percent);
-            $('#upload-bar-text').html(percent);
+            self.uploadPercent(Math.min((proportion * 100).toFixed(1), 100) + '%');
         }
         
         this.initialize = function( Panel ) {

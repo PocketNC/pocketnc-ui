@@ -55,7 +55,7 @@
         </h5>
       </div>
       <div class="modal-body">
-          Are you sure you want to overwrite <span id="fileOverwriteFile">insert file here</span>? This operation cannot be undone.
+          Are you sure you want to overwrite <span data-bind="text: fileName">insert file here</span>? This operation cannot be undone.
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="click: function() { cancelUpload() }" >Cancel</button>
@@ -88,7 +88,7 @@
 
                     <td>
                         <span class="btn btn-file width-button-larger">
-                            <span class="">{{nls.SelectNew}}</span>
+                            <span data-bind="style: { color: isUploading() ? 'grey' : 'black' }" class="">{{nls.SelectNew}}</span>
                             <input id="file_input" type="file" data-bind="disable: isUploading"/>
                         </span>
 
@@ -102,8 +102,8 @@
             <div id="upload" style="display: none;">
                 <div style="width: 75%">
                     <div class="progress" style="height: 32px; display: flex">
-                        <div class="bar" id="upload-bar">
-                            <div id="upload-bar-text"></div>
+                        <div class="bar" id="upload-bar" data-bind="style: { width: uploadPercent() }">
+                            <div id="upload-bar-text" style="line-height: 30px"data-bind="text: uploadPercent"></div>
                         </div>
                     </div>
                 </div>

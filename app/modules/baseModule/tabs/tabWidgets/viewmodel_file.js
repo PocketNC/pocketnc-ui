@@ -14,6 +14,7 @@ define(function(require) {
         self.currentLine = 0;
         self.currentLineByte = 0;
         self.downloadProgress = ko.observable(0);
+        self.progressDiv = ko.observable(false);
         this.getTemplate = function()
         {
             return template;
@@ -106,8 +107,6 @@ define(function(require) {
         self.fileId = 0;
         self.fileContent = [];
 
-        self.linuxCNCServer.vars.downloadProgress = ko.observable(0);
-        
         this.requestFileContent = (function(){
             
             var listener = null, chunkSize = 100000;
@@ -150,6 +149,7 @@ define(function(require) {
             }
 
             return function() {
+                self.downloadProgress(0);
                 id = Date.now();
                 var sizeListener = function(){
                     var msg = JSON.parse(event.data);
@@ -175,7 +175,7 @@ define(function(require) {
                 self.fileId = newfilecontent.id;
                 self.fileContent = [];
                 shouldRender = true;
-                $('#download-spinner').css('visibility', 'visible');
+                self.progressDiv(true);
             }
             
             var isData = (newfilecontent.data) && (newfilecontent.data.length > 0);
@@ -197,7 +197,7 @@ define(function(require) {
             
             if(newfilecontent.isEnd){
                 shouldRender = true;
-                $('#download-spinner').css('visibility', 'hidden');
+                self.progressDiv(false);
             }
 
             shouldRender = shouldRender || (ht.rowOffset() > (ht.countRows() - 100));

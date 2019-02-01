@@ -2,7 +2,7 @@
 
         <span class="well-label">
             <span style="float: left; width: 20%; display: list-item;"></span>
-            <span id="download-spinner" title="Fetching file contents from PocketNC" style="visibility:hidden; float: right; width: 20%; text-align: right; padding-right: 0.5em;">
+            <span id="download-spinner" title="Fetching file contents from PocketNC" data-bind="style: { 'visibility': progressDiv() ? 'visible' : 'hidden' }" style="visibility: hidden; float: right; width: 20%; text-align: right; padding-right: 0.5em;">
                 <i class="icon icon-spinner icon-spin"></i>
                 <span data-bind="text: downloadProgress"></span><span>%</span>
             </span>
