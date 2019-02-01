@@ -116,7 +116,7 @@ define(function(require) {
                                     }, 1000);
 
                                     clearInterval(self.timer);
-                                    self.linuxCNCServer.request();
+                                    self.linuxCNCServer.requestFileContent();
                                 }
                             }
                             else if(msg.code === "?Error executing command"){

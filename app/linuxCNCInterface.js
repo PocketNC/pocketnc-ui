@@ -245,7 +245,7 @@ define(function (require) {
     lcncsvr.vars.backplot_async = { data: ko.observable(""), watched: false, convert_to_json: true, local:true };
     lcncsvr.vars.file.data.subscribe( function(newval){ lcncsvr.socket.send(JSON.stringify({"id": "backplot_async", "command": "get", "name": "backplot_async"})); });
     lcncsvr.vars.file_content = { data: ko.observableArray([]), watched: false, local:true };
-    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval){  lcncsvr.fileFetcher.makeRequest(100000); } }); 
+    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval){ lcncsvr.getFileSize(); lcncsvr.requestFileContent(100000); } }); 
 
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
@@ -1040,82 +1040,57 @@ define(function (require) {
         lcncsvr.sendCommand("program_delete","program_delete",[filename]);
     }
 
-    lcncsvr.requestFileContent = function() {
-        lcncsvr.socket.send(JSON.stringify({"id": "file_content", "command": "get", "name": "file_content"}));
+    lcncsvr.getFileSize = function() {
+        var sizeListener = function(){
+            var msg = JSON.parse(event.data);
+            if((msg.id === "program_get_size") && (msg.code === "?OK")){
+                lcncsvr.vars.fileSize = parseInt(msg.data);
+                lcncsvr.socket.removeEventListener('message', sizeListener);
+            }
+        }
+        lcncsvr.socket.addEventListener('message', sizeListener);
+        lcncsvr.sendCommand("program_get_size", "program_get_size", []);
     }
- 
+
+    lcncsvr.vars.fileSize = 0;
     lcncsvr.vars.downloadProgress = ko.observable(0);
 
-    lcncsvr.fileFetcher = {
-        chunkSize: 10000,
-        fileIdx: 0,
-        fileSize: Number.MAX_VALUE,
-        contentsListener: null,
-        sizeListener: null,
-        requestId: null,
+    lcncsvr.requestFileContent = function(chunkSize) {
         
-        makeRequest: function(chunkSize){
-            if(this.contentsListener !== null){
-                this.cleanup();
-            }
-            this.getFileSize();
-            this.chunkSize = chunkSize;
-            this.contentsListener = this.contentsListenerFactory();
-            this.contentsListener.isDead = false;
-            this.requestId = Date.now();
-            lcncsvr.vars.file_content.data( { data: "", id: this.requestId, isEnd: false, percent: 0 } );
-            lcncsvr.socket.addEventListener('message', this.contentsListener);
-            lcncsvr.downloadChunkGCode(this.requestId, this.fileIdx, this.chunkSize);
-        },
-        
-        contentsListenerFactory: function(){ 
+        listenerFactory = function(_id, _chunkSize){
+            let id = _id;
+            let chunkSize = _chunkSize;
+            
+            let idx = 0;
+            let isEnd = false;
+            
             return function(){
-                if(this.isDead){
-                    console.log('Expired fileFetcher contentsListener still active for some reason');
+                if(isEnd){
+                    console.log('Expired requestFileContent listener still active');
                     return;
                 }
-
-                let msg = JSON.parse(event.data);
-                if((msg.id === lcncsvr.fileFetcher.requestId) && (msg.code === "?OK")){
-                    let isEnd = false;
-                    if(msg.data.length === lcncsvr.fileFetcher.chunkSize){
-                        lcncsvr.fileFetcher.fileIdx += lcncsvr.fileFetcher.chunkSize;
-                        lcncsvr.vars.downloadProgress((100 * lcncsvr.fileFetcher.fileIdx / lcncsvr.fileFetcher.fileSize).toFixed(0));
-                        lcncsvr.downloadChunkGCode(lcncsvr.fileFetcher.requestId, lcncsvr.fileFetcher.fileIdx, lcncsvr.fileFetcher.chunkSize);
+                
+                var msg = JSON.parse(event.data);
+                if((msg.id === id) && (msg.code === "?OK")){
+                    if(msg.data.length === chunkSize){
+                        idx += chunkSize;
+                        lcncsvr.vars.downloadProgress((100 * idx / lcncsvr.vars.fileSize).toFixed(0));
+                        lcncsvr.downloadChunkGCode(id, idx, chunkSize);
                     }
                     else { 
                         isEnd = true;
-                        lcncsvr.fileFetcher.cleanup();
                     }
-                    lcncsvr.vars.file_content.data( { data: msg.data, id: lcncsvr.vars.requestId, isEnd: isEnd });
+                    lcncsvr.vars.file_content.data( { data: msg.data, id: id, isEnd: isEnd });
                 }
             }
-        },
- 
-        sizeListenerFactory: function(){
-            return function(){
-                var msg = JSON.parse(event.data);
-                if((msg.id === "program_get_size") && (msg.code === "?OK")){
-                    lcncsvr.fileFetcher.fileSize = parseInt(msg.data);
-                    lcncsvr.socket.removeEventListener('message', lcncsvr.fileFetcher.sizeListener);
-                }
-            }
-        },
-        
-        getFileSize: function() {
-            this.sizeListener = this.sizeListenerFactory();
-            lcncsvr.socket.addEventListener('message', this.sizeListener);
-            lcncsvr.sendCommand("program_get_size", "program_get_size", []);
-        },
-    
-        cleanup: function(){
-            this.contentsListener.isDead = true;
-            lcncsvr.socket.removeEventListener('message', this.contentsListener);
-            this.fileIdx = 0;
-            this.contentsListener = null;
         }
+        let id = Date.now();
+        let listener = listenerFactory(id, chunkSize);
+        lcncsvr.vars.file_content.data( { data: "", id: id, isEnd: false, percent: 0 } );
+        lcncsvr.socket.addEventListener('message', listener);
+        lcncsvr.downloadChunkGCode(id, 0, chunkSize);
     }
-       
+
     lcncsvr.uploadGCode = function(filename, data) {
         lcncsvr.sendCommand("program_upload","program_upload",[filename, data]);
     }
