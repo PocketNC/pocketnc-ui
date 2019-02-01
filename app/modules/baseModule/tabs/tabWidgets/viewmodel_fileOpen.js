@@ -4,7 +4,7 @@ define(function(require) {
     var nls = require('i18n!./nls/resources');
     var utils = require('../../../../core/helpers/utility.js');
 
-	var ViewModel = function(moduleContext) {
+    var ViewModel = function(moduleContext) {
 
 	var self = this;
         
@@ -17,6 +17,7 @@ define(function(require) {
         self.overwrite = false;
         self.isCanceled = false;
         self.timer = {};
+        self.isUploading = ko.observable(false);
 
         this.getTemplate = function()
         {
@@ -46,13 +47,14 @@ define(function(require) {
         {
             self.overwrite = false;
             self.isCanceled = false;
+            self.isUploading(true);
             var files = evt.target.files; // FileList object
             self.reader = new FileReader();
             self.newFile = files[0];
             self.upload();
             
-            $('#file_input').val('').attr('disabled', 'disabled').siblings().css('color', 'grey');
-            let hoverText = self.newFile.name + " " + self.humanizeFileSize(self.newFile.size);
+            $('#file_input').val('').siblings().css('color', 'grey');
+            var hoverText = self.newFile.name + " " + self.humanizeFileSize(self.newFile.size);
             document.getElementById("upload").setAttribute("title", hoverText);
             self.updateProgress(0);
             self.toggleUploadDiv(true);
@@ -72,69 +74,72 @@ define(function(require) {
             var blob = self.newFile.slice( startIdx, nextIdx );
 
             self.reader.onload = function(e) {
-                    
-                    function listenMsg(event){
-                        if(self.isCanceled){
-                            self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
-                            return;
-                        }
-
-                        var msg = JSON.parse(event.data);
-                        if(msg.id === "program_upload_chunk"){
-                            self.isConnected = true;
-                            if(msg.code === "?OK"){
-                                
-                                self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
-                                 
-                                if(msg.data === "occupied"){
-                                    self.overwrite = true;
-                                    $('#fileOverwriteFile').html(self.newFile.name);
-                                    $('#fileOverwriteModal').modal('show'); 
-                                    return;
-                                }
-
-                                self.updateProgress(nextIdx / self.newFile.size); 
-                                if(nextIdx < self.newFile.size){
-                                    isLastChunk = (nextIdx + self.chunkSize) > self.newFile.size;
-                                    if( isLastChunk ){
-                                        self.linuxCNCServer.setRmtMode(self.linuxCNCServer.TASK_MODE_MDI);
-                                        self.linuxCNCServer.setRmtMode(self.linuxCNCServer.TASK_MODE_AUTO);
-                                    }
-                                    self.upload(nextIdx);
-                                }
-                                else{
-                                    let newStatus = '';
-                                    if(self.overwrite)
-                                        newStatus = 'Succesfully overwrote file ' + self.newFile.name;
-                                    else
-                                        newStatus = 'Succesfully uploaded ' + self.newFile.name;
-                                    $.pnotify({title: "Success", text: newStatus, type: "success"});
-                                    
-                                    setTimeout(function() { 
-                                        self.toggleUploadDiv(false) 
-                                        $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
-                                    }, 1000);
-
-                                    clearInterval(self.timer);
-                                    self.linuxCNCServer.requestFileContent();
-                                }
-                            }
-                            else if(msg.code === "?Error executing command"){
-                                let newStatus = 'Error uploading file ' + self.newFile.name;
-                                $.pnotify({title: "Error", text: newStatus, type: "error"});
-                                self.cancelUpload();
-                                self.isCanceled = true;
-                                $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
-                            }
-                        }
+                
+                function listenMsg(event){
+                    if(self.isCanceled){
+                        self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
+                        return;
                     }
 
-                    
-                    self.linuxCNCServer.socket.addEventListener('message', listenMsg);
-                    let start = (startIdx === 0);
-                    let end = (nextIdx > self.newFile.size);
-                    self.linuxCNCServer.uploadChunkGCode(self.newFile.name, e.target.result, start, end, self.overwrite);
-                };
+                    var msg = JSON.parse(event.data);
+                    if(msg.id === "program_upload_chunk"){
+                        self.isConnected = true;
+                        if(msg.code === "?OK"){
+                            
+                            self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
+                             
+                            if(msg.data === "occupied"){
+                                self.overwrite = true;
+                                $('#fileOverwriteFile').html(self.newFile.name);
+                                $('#fileOverwriteModal').modal('show'); 
+                                return;
+                            }
+
+                            self.updateProgress(nextIdx / self.newFile.size); 
+                            if(nextIdx < self.newFile.size){
+                                isLastChunk = (nextIdx + self.chunkSize) > self.newFile.size;
+                                if( isLastChunk ){
+                                    self.linuxCNCServer.setRmtMode(self.linuxCNCServer.TASK_MODE_MDI);
+                                    self.linuxCNCServer.setRmtMode(self.linuxCNCServer.TASK_MODE_AUTO);
+                                }
+                                self.upload(nextIdx);
+                            }
+                            else{
+                                var newStatus = '';
+                                if(self.overwrite)
+                                    newStatus = 'Succesfully overwrote file ' + self.newFile.name;
+                                else
+                                    newStatus = 'Succesfully uploaded ' + self.newFile.name;
+                                $.pnotify({title: "Success", text: newStatus, type: "success"});
+                                
+                                setTimeout(function() { 
+                                    self.toggleUploadDiv(false) 
+                                    $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
+                                }, 1000);
+
+                                clearInterval(self.timer);
+                                //force a refresh of knockout observable in case the uploaded file has the same name as the one currently open
+                                //filePanel.ViewModel.requestFileContent();
+                                lcncsvr.vars.file.data.valueHasMutated();
+                                self.isUploading(false);
+                            }
+                        }
+                        else if(msg.code === "?Error executing command"){
+                            var newStatus = 'Error uploading file ' + self.newFile.name;
+                            $.pnotify({title: "Error", text: newStatus, type: "error"});
+                            self.cancelUpload();
+                            self.isCanceled = true;
+                            $('#file_input').removeAttr('disabled').siblings().css({ 'color': 'black'});
+                        }
+                    }
+                }
+
+                
+                self.linuxCNCServer.socket.addEventListener('message', listenMsg);
+                var start = (startIdx === 0);
+                var end = (nextIdx > self.newFile.size);
+                self.linuxCNCServer.uploadChunkGCode(self.newFile.name, e.target.result, start, end, self.overwrite);
+            };
             
             self.reader.readAsText(blob);
         }
@@ -152,7 +157,8 @@ define(function(require) {
        
         this.cancelUpload = function(){
             self.isCanceled = true;
-            let text = 'Canceled upload of ' + self.newFile.name;
+            self.isUploading(false);
+            var text = 'Canceled upload of ' + self.newFile.name;
             $.pnotify({title: "Upload canceled", text: text, type: "info"});
             clearInterval(self.timer);
             setTimeout(function() { 
@@ -171,7 +177,7 @@ define(function(require) {
             percent = Math.min((proportion * 100).toFixed(1), 100);
             percent = percent + '%';
             bar.width(percent);
-            bar.html(percent); 
+            $('#upload-bar-text').html(percent);
         }
         
         this.initialize = function( Panel ) {

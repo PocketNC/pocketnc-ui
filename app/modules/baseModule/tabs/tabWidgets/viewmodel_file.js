@@ -81,7 +81,7 @@ define(function(require) {
                 });
 
                 // monitor file contents
-                self.linuxCNCServer.vars.file_content.data.subscribe( self.updateData );
+                self.linuxCNCServer.vars.file.data.subscribe( self.requestFileContent );
                 self.linuxCNCServer.ui_motion_line.subscribe( function(newval){ self.motionLineUpdateInProgress=true; self.updateDisplayLine(newval); self.motionLineUpdateInProgress=false; });
 
                 self.fileListTable.dblclick( function(){ self.setMotionLineToSelected(); } );
@@ -106,12 +106,70 @@ define(function(require) {
         self.fileId = 0;
         self.fileContent = [];
 
+        self.linuxCNCServer.vars.downloadProgress = ko.observable(0);
+        
+        this.requestFileContent = (function(){
+            
+            var listener = null, chunkSize = 100000;
+            var id, fileSize; 
+
+            var listenerFactory = function(_id, _chunkSize, _fileSize){
+                var id = _id;
+                var chunkSize = _chunkSize;
+                var fileSize = _fileSize;
+                
+                var idx = 0;
+                var isEnd = false;
+                
+                return function(){
+                    var msg = JSON.parse(event.data);
+                    if((msg.id === id) && (msg.code === "?OK")){
+                        if(msg.data.length === chunkSize){
+                            idx += chunkSize;
+                            self.downloadProgress((100 * idx / fileSize).toFixed(0));
+                            self.linuxCNCServer.downloadChunkGCode(id, idx, chunkSize);
+                        }
+                        else { 
+                            isEnd = true;
+                            self.linuxCNCServer.socket.removeEventListener('message', listener);
+                        }
+                        self.updateData({ data: msg.data, id: id, isEnd: isEnd });
+                    }
+                }
+            }
+
+            var startDownload = function() {
+                if(listener){
+                    self.linuxCNCServer.socket.removeEventListener('message', listener);
+                }
+
+                listener = listenerFactory(id, chunkSize, fileSize);
+                self.updateData({ data: "", id: id, isEnd: false, percent: 0 });
+                self.linuxCNCServer.socket.addEventListener('message', listener);
+                self.linuxCNCServer.downloadChunkGCode(id, 0, chunkSize);
+            }
+
+            return function() {
+                id = Date.now();
+                var sizeListener = function(){
+                    var msg = JSON.parse(event.data);
+                    if((msg.id === id) && (msg.code === "?OK")){
+                        fileSize = parseInt(msg.data);
+                        self.linuxCNCServer.socket.removeEventListener('message', sizeListener);
+                        startDownload();
+                    }
+                }
+                self.linuxCNCServer.socket.addEventListener('message', sizeListener);
+                self.linuxCNCServer.sendCommand(id, "program_get_size", [])
+            }
+        })();
+
         this.updateData = function( newfilecontent )
         {
             if(newfilecontent.id < self.fileId){
                 return;
             }
-            let shouldRender = false;
+            var shouldRender = false;
             
             if(self.fileId !== newfilecontent.id && newfilecontent.id !== undefined){
                 self.fileId = newfilecontent.id;
@@ -120,22 +178,22 @@ define(function(require) {
                 $('#download-spinner').css('visibility', 'visible');
             }
             
-            let isData = (newfilecontent.data) && (newfilecontent.data.length > 0);
+            var isData = (newfilecontent.data) && (newfilecontent.data.length > 0);
             if(isData){  
                 if(self.fileContent.length === 0)
                     shouldRender = true;
             
-                let newarr = _.zip(newfilecontent.data.split('\n'));
+                var newarr = _.zip(newfilecontent.data.split('\n'));
                 if(self.fileContent.length > 0)
                     self.fileContent[self.fileContent.length - 1] = [self.fileContent.pop()[0] + newarr.shift()[0]];
                 
-                let i;
+                var i;
                 for(i = 0; i < newarr.length; i++){
                     self.fileContent.push(newarr[i]);
                 }
             }
 
-            let ht = self.fileListTable.handsontable('getInstance');
+            var ht = self.fileListTable.handsontable('getInstance');
             
             if(newfilecontent.isEnd){
                 shouldRender = true;

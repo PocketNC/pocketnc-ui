@@ -89,7 +89,7 @@
                     <td>
                         <span class="btn btn-file width-button-larger">
                             <span class="">{{nls.SelectNew}}</span>
-                            <input id="file_input" type="file"/>
+                            <input id="file_input" type="file" data-bind="disable: isUploading"/>
                         </span>
 
                     </td>
@@ -102,7 +102,9 @@
             <div id="upload" style="display: none;">
                 <div style="width: 75%">
                     <div class="progress" style="height: 32px; display: flex">
-                        <div class="bar" id="upload-bar"></div>
+                        <div class="bar" id="upload-bar">
+                            <div id="upload-bar-text"></div>
+                        </div>
                     </div>
                 </div>
                 <div id="cancel" class="cancel">

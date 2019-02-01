@@ -44,7 +44,7 @@ define(function (require) {
     lcncsvr.server_open = ko.observable(false);
     lcncsvr.server_logged_in = ko.observable(false);
     lcncsvr.serverReconnectCheckInterval = 2000;
-    lcncsvr.serverReconnectHBTimeoutInterval = 3000;
+    lcncsvr.serverReconnectHBTimeoutInterval = 5000;
 
     lcncsvr.jog_step = ko.observable(0.001);
     lcncsvr.jog_speed_fast = ko.observable(1);
@@ -245,7 +245,6 @@ define(function (require) {
     lcncsvr.vars.backplot_async = { data: ko.observable(""), watched: false, convert_to_json: true, local:true };
     lcncsvr.vars.file.data.subscribe( function(newval){ lcncsvr.socket.send(JSON.stringify({"id": "backplot_async", "command": "get", "name": "backplot_async"})); });
     lcncsvr.vars.file_content = { data: ko.observableArray([]), watched: false, local:true };
-    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval){  lcncsvr.requestFileContent(); } }); 
 
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
@@ -278,7 +277,6 @@ define(function (require) {
             console.log("SERVER_LOGGED_IN: " + newval);
             lcncsvr.vars.file.data("");
             lcncsvr.vars.backplot_async.data("");
-            lcncsvr.vars.file_content.data( { data: "", id: "", isEnd: true } );
         }
     });
 
@@ -1039,69 +1037,6 @@ define(function (require) {
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
         lcncsvr.sendCommand("program_delete","program_delete",[filename]);
     }
-
-    lcncsvr.vars.downloadProgress = ko.observable(0);
-
-    lcncsvr.requestFileContent = (function() {
-        
-        let listener = null, chunkSize = 100000;
-        let id, fileSize; 
-
-        listenerFactory = function(_id, _chunkSize, _fileSize){
-            let id = _id;
-            let chunkSize = _chunkSize;
-            let fileSize = _fileSize;
-            
-            let idx = 0;
-            let isEnd = false;
-            
-            return function(){
-                if(isEnd){
-                    console.log('Expired requestFileContent listener still active');
-                    return;
-                }
-                
-                var msg = JSON.parse(event.data);
-                if((msg.id === id) && (msg.code === "?OK")){
-                    if(msg.data.length === chunkSize){
-                        idx += chunkSize;
-                        lcncsvr.vars.downloadProgress((100 * idx / fileSize).toFixed(0));
-                        lcncsvr.downloadChunkGCode(id, idx, chunkSize);
-                    }
-                    else { 
-                        isEnd = true;
-                        lcncsvr.socket.removeEventListener('message', listener);
-                    }
-                    lcncsvr.vars.file_content.data( { data: msg.data, id: id, isEnd: isEnd });
-                }
-            }
-        }
-
-        startDownload = function() {
-            if(listener){
-                lcncsvr.socket.removeEventListener('message', listener);
-            }
-
-            listener = listenerFactory(id, chunkSize, fileSize);
-            lcncsvr.vars.file_content.data( { data: "", id: id, isEnd: false, percent: 0 } );
-            lcncsvr.socket.addEventListener('message', listener);
-            lcncsvr.downloadChunkGCode(id, 0, chunkSize);
-        }
-
-        return function() {
-            id = Date.now();
-            var sizeListener = function(){
-                var msg = JSON.parse(event.data);
-                if((msg.id === id) && (msg.code === "?OK")){
-                    fileSize = parseInt(msg.data);
-                    lcncsvr.socket.removeEventListener('message', sizeListener);
-                    startDownload();
-                }
-            }
-            lcncsvr.socket.addEventListener('message', sizeListener);
-            lcncsvr.sendCommand(id, "program_get_size", [])
-        }
-    })();
 
     lcncsvr.uploadGCode = function(filename, data) {
         lcncsvr.sendCommand("program_upload","program_upload",[filename, data]);
