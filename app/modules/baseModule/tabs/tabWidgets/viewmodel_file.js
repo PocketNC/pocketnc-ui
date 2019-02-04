@@ -11,10 +11,12 @@ define(function(require) {
         self.context = moduleContext;
         self.privateContext = privateContext;
 
-        self.currentLine = 0;
-        self.currentLineByte = 0;
+        self.request = null;
+        self.fileId = 0;
+        self.fileContent = [];
         self.downloadProgress = ko.observable(0);
         self.progressDiv = ko.observable(false);
+        
         this.getTemplate = function()
         {
             return template;
@@ -82,7 +84,13 @@ define(function(require) {
                 });
 
                 // monitor file contents
-                self.linuxCNCServer.vars.file.data.subscribe( self.requestFileContent );
+                self.linuxCNCServer.vars.file.data.subscribe(
+                    function(){ 
+                        if(self.request)
+                            self.request(); //cancels an existing request
+                        self.request = self.requestFileContent();
+                    }
+                );
                 self.linuxCNCServer.ui_motion_line.subscribe( function(newval){ self.motionLineUpdateInProgress=true; self.updateDisplayLine(newval); self.motionLineUpdateInProgress=false; });
 
                 self.fileListTable.dblclick( function(){ self.setMotionLineToSelected(); } );
@@ -103,37 +111,27 @@ define(function(require) {
 
         }
 
-        //This id will be set everytime the G code program opened in Rockhopper changes, and the file's contents begin downloading to the UI
-        self.fileId = 0;
-        self.fileContent = [];
-
-        this.requestFileContent = (function(){
+        this.requestFileContent = function(){
+            var idx = 0;
+            var chunkSize = 100000;
+            var isEnd = false;
+            var id = Date.now();
+            var fileSize; 
+            self.downloadProgress(0);
             
-            var listener = null, chunkSize = 100000;
-            var id, fileSize; 
-
-            var listenerFactory = function(_id, _chunkSize, _fileSize){
-                var id = _id;
-                var chunkSize = _chunkSize;
-                var fileSize = _fileSize;
-                
-                var idx = 0;
-                var isEnd = false;
-                
-                return function(){
-                    var msg = JSON.parse(event.data);
-                    if((msg.id === id) && (msg.code === "?OK")){
-                        if(msg.data.length === chunkSize){
-                            idx += chunkSize;
-                            self.downloadProgress((100 * idx / fileSize).toFixed(0));
-                            self.linuxCNCServer.downloadChunkGCode(id, idx, chunkSize);
-                        }
-                        else { 
-                            isEnd = true;
-                            self.linuxCNCServer.socket.removeEventListener('message', listener);
-                        }
-                        self.updateData({ data: msg.data, id: id, isEnd: isEnd });
+            var listener = function(e){
+                var msg = JSON.parse(e.data);
+                if((msg.id === id) && (msg.code === "?OK")){
+                    if(msg.data.length === chunkSize){
+                        idx += chunkSize;
+                        self.downloadProgress((100 * idx / fileSize).toFixed(0));
+                        self.linuxCNCServer.downloadChunkGCode(id, idx, chunkSize);
                     }
+                    else { 
+                        isEnd = true;
+                        self.linuxCNCServer.socket.removeEventListener('message', listener);
+                    }
+                    self.updateData({ data: msg.data, id: id, isEnd: isEnd });
                 }
             }
 
@@ -141,28 +139,28 @@ define(function(require) {
                 if(listener){
                     self.linuxCNCServer.socket.removeEventListener('message', listener);
                 }
-
-                listener = listenerFactory(id, chunkSize, fileSize);
                 self.updateData({ data: "", id: id, isEnd: false, percent: 0 });
                 self.linuxCNCServer.socket.addEventListener('message', listener);
                 self.linuxCNCServer.downloadChunkGCode(id, 0, chunkSize);
             }
 
-            return function() {
-                self.downloadProgress(0);
-                id = Date.now();
-                var sizeListener = function(){
-                    var msg = JSON.parse(event.data);
-                    if((msg.id === id) && (msg.code === "?OK")){
-                        fileSize = parseInt(msg.data);
-                        self.linuxCNCServer.socket.removeEventListener('message', sizeListener);
-                        startDownload();
-                    }
+            var sizeListener = function(e){
+                var msg = JSON.parse(e.data);
+                if((msg.id === id) && (msg.code === "?OK")){
+                    fileSize = parseInt(msg.data);
+                    self.linuxCNCServer.socket.removeEventListener('message', sizeListener);
+                    startDownload();
                 }
-                self.linuxCNCServer.socket.addEventListener('message', sizeListener);
-                self.linuxCNCServer.sendCommand(id, "program_get_size", [])
             }
-        })();
+
+            self.linuxCNCServer.socket.addEventListener('message', sizeListener);
+            self.linuxCNCServer.sendCommand(id, "program_get_size", []);
+            
+            var cancel = function() {
+                self.linuxCNCServer.socket.removeEventListener('message', listener);
+            }
+           return cancel;
+        }
 
         this.updateData = function( newfilecontent )
         {
