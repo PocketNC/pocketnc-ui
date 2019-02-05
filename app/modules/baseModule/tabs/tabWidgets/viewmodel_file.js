@@ -12,7 +12,6 @@ define(function(require) {
         self.privateContext = privateContext;
 
         self.request = null;
-        self.fileId = 0;
         self.fileContent = [];
         self.downloadProgress = ko.observable(0);
         self.progressDiv = ko.observable(false);
@@ -112,12 +111,16 @@ define(function(require) {
         }
 
         this.requestFileContent = function(){
+            self.fileContent = [];
+            self.renderTable();
+            self.downloadProgress(0);
+            self.progressDiv(true);
+
             var idx = 0;
             var chunkSize = 100000;
             var isEnd = false;
             var id = Date.now();
-            var fileSize; 
-            self.downloadProgress(0);
+            var fileSize = Number.MAX_VALUE; 
             
             var listener = function(e){
                 var msg = JSON.parse(e.data);
@@ -127,60 +130,40 @@ define(function(require) {
                         self.downloadProgress((100 * idx / fileSize).toFixed(0));
                         self.linuxCNCServer.downloadChunkGCode(id, idx, chunkSize);
                     }
-                    else { 
+                    else {
+                        self.progressDiv(false);
                         isEnd = true;
                         self.linuxCNCServer.socket.removeEventListener('message', listener);
                     }
                     self.updateData({ data: msg.data, id: id, isEnd: isEnd });
                 }
             }
-
-            var startDownload = function() {
-                if(listener){
-                    self.linuxCNCServer.socket.removeEventListener('message', listener);
-                }
-                self.updateData({ data: "", id: id, isEnd: false, percent: 0 });
-                self.linuxCNCServer.socket.addEventListener('message', listener);
-                self.linuxCNCServer.downloadChunkGCode(id, 0, chunkSize);
-            }
-
+            self.linuxCNCServer.socket.addEventListener('message', listener);
+            self.updateData({ data: "", id: id, isEnd: false, percent: 0 });
+            self.linuxCNCServer.downloadChunkGCode(id, 0, chunkSize);
+            
             var sizeListener = function(e){
                 var msg = JSON.parse(e.data);
-                if((msg.id === id) && (msg.code === "?OK")){
+                if((msg.id === (id + 'size')) && (msg.code === "?OK")){
                     fileSize = parseInt(msg.data);
                     self.linuxCNCServer.socket.removeEventListener('message', sizeListener);
-                    startDownload();
                 }
             }
-
             self.linuxCNCServer.socket.addEventListener('message', sizeListener);
-            self.linuxCNCServer.sendCommand(id, "program_get_size", []);
+            self.linuxCNCServer.sendCommand(id + 'size', "program_get_size", []);
             
             var cancel = function() {
                 self.linuxCNCServer.socket.removeEventListener('message', listener);
             }
-           return cancel;
+            return cancel;
         }
 
         this.updateData = function( newfilecontent )
         {
-            if(newfilecontent.id < self.fileId){
-                return;
-            }
-            var shouldRender = false;
-            
-            if(self.fileId !== newfilecontent.id && newfilecontent.id !== undefined){
-                self.fileId = newfilecontent.id;
-                self.fileContent = [];
-                shouldRender = true;
-                self.progressDiv(true);
-            }
+            var shouldRender = (self.fileContent.length == 0);
             
             var isData = (newfilecontent.data) && (newfilecontent.data.length > 0);
             if(isData){  
-                if(self.fileContent.length === 0)
-                    shouldRender = true;
-            
                 var newarr = _.zip(newfilecontent.data.split('\n'));
                 if(self.fileContent.length > 0)
                     self.fileContent[self.fileContent.length - 1] = [self.fileContent.pop()[0] + newarr.shift()[0]];
@@ -190,21 +173,21 @@ define(function(require) {
                     self.fileContent.push(newarr[i]);
                 }
             }
-
+            
             var ht = self.fileListTable.handsontable('getInstance');
-            
-            if(newfilecontent.isEnd){
-                shouldRender = true;
-                self.progressDiv(false);
-            }
-
             shouldRender = shouldRender || (ht.rowOffset() > (ht.countRows() - 100));
-            
-            if(shouldRender){
-                ht.loadData(self.fileContent);
-                ht.render();
-                $("#jog_focus_handler").focus();
-            }
+            shouldRender = shouldRender || newfilecontent.isEnd;
+            if(shouldRender) 
+                self.renderTable(ht);
+        }
+
+        this.renderTable = function(ht=null)
+        {
+            if(!ht)
+                ht = self.fileListTable.handsontable('getInstance');
+            ht.loadData(self.fileContent);
+            ht.render();
+            $("#jog_focus_handler").focus();
         }
 
         this.updateDisplayLine = function( lineNum )
