@@ -44,7 +44,7 @@ define(function (require) {
     lcncsvr.server_open = ko.observable(false);
     lcncsvr.server_logged_in = ko.observable(false);
     lcncsvr.serverReconnectCheckInterval = 2000;
-    lcncsvr.serverReconnectHBTimeoutInterval = 30000;
+    lcncsvr.serverReconnectHBTimeoutInterval = 5000;
 
     lcncsvr.jog_step = ko.observable(0.001);
     lcncsvr.jog_speed_fast = ko.observable(1);
@@ -244,8 +244,7 @@ define(function (require) {
     lcncsvr.vars.axis_mask = { data: ko.observable(0), watched: true };
     lcncsvr.vars.backplot_async = { data: ko.observable(""), watched: false, convert_to_json: true, local:true };
     lcncsvr.vars.file.data.subscribe( function(newval){ lcncsvr.socket.send(JSON.stringify({"id": "backplot_async", "command": "get", "name": "backplot_async"})); });
-    lcncsvr.vars.file_content = { data: ko.observable(""), watched: false, local:true };
-    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval) lcncsvr.requestFileContent() });
+    lcncsvr.vars.file_content = { data: ko.observableArray([]), watched: false, local:true };
 
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
@@ -289,7 +288,6 @@ define(function (require) {
             console.log("SERVER_LOGGED_IN: " + newval);
             lcncsvr.vars.file.data("");
             lcncsvr.vars.backplot_async.data("");
-            lcncsvr.vars.file_content.data("");
         }
     });
 
@@ -533,7 +531,7 @@ define(function (require) {
     {
         if ( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO))
             return;
-        
+
         lcncsvr.sendCommand("auto","auto",["AUTO_RUN",lineNum.toString()])
     }
 
@@ -960,7 +958,7 @@ define(function (require) {
     {
         if (_.isNumber(zOffset))
             zOffset = zOffset.toFixed(6);
-
+ 
         lcncsvr.mdi( "G10 L10 P" + lcncsvr.vars.tool_in_spindle.data() + " Z" + zOffset );
         lcncsvr.mdi( "G43" );
     }
@@ -1051,16 +1049,18 @@ define(function (require) {
         lcncsvr.sendCommand("program_delete","program_delete",[filename]);
     }
 
-    lcncsvr.requestFileContent = function() {
-        lcncsvr.socket.send(JSON.stringify({"id": "file_content", "command": "get", "name": "file_content"}));
-    }
-
     lcncsvr.uploadGCode = function(filename, data) {
-        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
-        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
         lcncsvr.sendCommand("program_upload","program_upload",[filename, data]);
     }
 
+    lcncsvr.uploadChunkGCode = function(filename, data, start, end, ovw) {
+        lcncsvr.sendCommand("program_upload_chunk","program_upload_chunk",[filename, data, start, end, ovw]);
+    }
+
+    lcncsvr.downloadChunkGCode = function(requestId, fileIdx, chunkSize) {
+        lcncsvr.sendCommand(requestId, "program_download_chunk",[fileIdx, chunkSize]);
+    }
+    
     lcncsvr.sendAllWatchRequests = function () {
         try {
             var id;

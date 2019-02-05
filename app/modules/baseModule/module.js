@@ -51,6 +51,7 @@ define(function(require) {
                     t = t.replace("joint 2", "Z Axis");
                     t = t.replace("joint 3", "A Axis");
                     t = t.replace("joint 4", "B Axis");
+                    t = t.replace("F word", "F code");
 
                     $.pnotify({
                         type: data.type || "error",
