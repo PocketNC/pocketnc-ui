@@ -55,6 +55,7 @@ define(function (require) {
     lcncsvr.vars.linear_units = { data: ko.observable(1), watched: true };
     lcncsvr.vars.program_units = { data: ko.observable(0), watched: true };
     lcncsvr.vars["halpin_halui.max-velocity.value"] = { data: ko.observable("1"), watched: true };
+    lcncsvr.vars["halpin_spindle_voltage.speed_measured"] = { data: ko.observable("1"), watched: true };
 
     lcncsvr.isClientConfigValid = function()
     {
@@ -209,6 +210,7 @@ define(function (require) {
     lcncsvr.vars.paused = { data: ko.observable(false), watched: true };
     lcncsvr.vars.mist =  { data: ko.observable(false), watched: true };
     lcncsvr.vars.flood =  { data: ko.observable(false), watched: true };
+    lcncsvr.vars.spindle_enabled = { data: ko.observable(false), watched: true };
     lcncsvr.vars.spindle_brake = { data: ko.observable(false), watched: true };
     lcncsvr.vars.spindle_speed = { data: ko.observable(0), watched: true };
     lcncsvr.vars.tool_in_spindle = { data: ko.observable(0), watched: true };
