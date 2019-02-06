@@ -51,7 +51,7 @@ define(function(require) {
 
         self.spindleSpeed = ko.computed(
           function() {
-            var spindleSpeedMeasured =  self.linuxCNCServer.vars['halpin_spindle_voltage.speed_measured'].data();
+            var spindleSpeedMeasured =  parseFloat(self.linuxCNCServer.vars['halpin_spindle_voltage.speed_measured'].data());
             var spindleSpeedCommanded = self.linuxCNCServer.vars.spindle_speed.data();
             var spindleSpeedMultiplier = self.linuxCNCServer.vars.spindlerate.data();
             var spindleOn = self.linuxCNCServer.vars.spindle_enabled.data();
