@@ -29,6 +29,13 @@ define(function(require) {
                 // The modal dialogs need unique IDs globally, so each instance of this view must have different IDs for the modals
                 self.settings.globals.nextUniqueElementID = self.settings.globals.nextUniqueElementID + 1;
             }
+            
+            document.getElementById('inputToolSet').addEventListener('keypress',
+                function(e){
+                    if(e.keyCode == 13){
+                        e.preventDefault();
+                    }
+                });
 
 		};
 
