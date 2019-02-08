@@ -584,10 +584,26 @@ define(function (require) {
         if ($.isEmptyObject(cmd)) {
             return;
         }
-        if (!lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI)) {
-            return;
+        var errorText = "MDI command cannot be executed, ";
+        var isError = false;
+        if( lcncsvr.vars.task_state.data() !== lcncsvr.STATE_ON ){
+            errorText += "machine must be out of E-stop and turned on";
+            isError = true;
         }
-        if (!lcncsvr.RmtManualInputAllowed()) {
+        else if( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI) ) {
+            errorText += "unable to set mode to MDI";
+            isError = true;
+        }
+        else if( ( lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_IDLE ) && lcncsvr.vars.queue_full.data() ){
+            errorText += "interpreter not idle and trajectory planner queue is full"
+            isError = true;
+        }
+        if(isError){
+            $.pnotify({
+                type: "error",
+                title: "Alert",
+                text: errorText
+            });
             return;
         }
         return lcncsvr.sendCommand("mdi","mdi",[cmd]);
