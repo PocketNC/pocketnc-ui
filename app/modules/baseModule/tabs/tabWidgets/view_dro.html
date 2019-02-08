@@ -16,9 +16,9 @@
                                $root.onDROValChange(data,event,$data)}, blur:
                                function(data,event){
                                    $root.onDROValChange(data,event,$data) } },
-                                   value: ($root.formatDisplayValue(
-                                   $root.linuxCNCServer.RmtDRO()[$data]).toFixed($root.linuxCNCServer.DisplayPrecision())
-                                   ), attr:{id: (($data).toString()+'droax') }
+                                   value: ($root.linuxCNCServer.FormatDisplayNumber(
+                                   $root.linuxCNCServer.RmtDRO()[$data])),
+                                   attr:{id: (($data).toString()+'droax') }
                                    ">
                 </td>
 
