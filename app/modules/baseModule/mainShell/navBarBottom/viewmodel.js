@@ -125,12 +125,14 @@ define(function(require) {
         this.currentMDIText = ko.observable("");
         this.currentMDITextSetAndFocus = function(newval)
         {
+            self.linuxCNCServer.vars.mdiCmdSent(false);
             self.currentMDIText(newval);
             $('#navBottomMDIInput',self.Panel.getJQueryElement()).focus();
         };
 
         this.mdiInputKeyPress = function(d,e)
         {
+            self.linuxCNCServer.vars.mdiCmdSent(false);
             if (self.mdiTypeAhead.shown)
                 return true;
 
@@ -139,11 +141,11 @@ define(function(require) {
             if (keyCode == 13) self.mdiExecute();
             return true;
         };
-
+        
         this.mdiExecute= function()
         {
             var mdiText = $('#navBottomMDIInput',self.Panel.getJQueryElement()).val();
-
+            $("#mdi-arrow").hide(); 
             if (! _.isEmpty(mdiText))
             {
                 self.linuxCNCServer.mdi(mdiText);

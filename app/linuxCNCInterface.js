@@ -578,7 +578,8 @@ define(function (require) {
         lcncsvr.sendCommand("wait_complete","wait_complete",["1"]);
         return;
     }
-
+    
+    lcncsvr.vars.mdiCmdSent = ko.observable(false);
     lcncsvr.mdi = function( cmd )
     {
         if ($.isEmptyObject(cmd)) {
@@ -606,6 +607,8 @@ define(function (require) {
             });
             return;
         }
+
+        lcncsvr.vars.mdiCmdSent(true);
         return lcncsvr.sendCommand("mdi","mdi",[cmd]);
     }
 

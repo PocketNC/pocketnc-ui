@@ -1,0 +1,21 @@
+.arrow {
+    background-color: white;
+    color: green;
+    display: none;
+    position: absolute;
+    top: -9px;
+    left: 83%;
+    animation: arrow 600ms;
+    font-size: 28px;
+    z-index: 10;
+}
+
+
+@keyframes arrow {
+  0% {
+    left: 70%;
+  }
+  100% {
+    left:83%;
+  }
+}
