@@ -6,6 +6,8 @@ define({
         "Zero": "Zero",
         "HomeAll": "Home All",
 
+        "SpindleWarmup": "Warm Up",
+
         "JogTitle" : "Jog",
         "JogAxesLabel" : "Axes",
         "JogWithMouseWheel": "Jog With Mouse Wheel",

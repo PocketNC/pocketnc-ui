@@ -52,7 +52,11 @@
                 </td>
 
                 <td class="">
-                    <input id="spindle_speed" data-bind="value: spindleSpeed" type="text" class="input span12" style="width: 80px;text-align: left; font-weight:bold;"/>
+                    <input id="spindle_speed" data-bind="value: spindleSpeed" type="text" class="input span12" style="width: 80px;text-align: left; font-weight:bold; float: left"/>
+                    <button class="btn xbtn-primary" style="margin-left: 5px" data-bind="enable: linuxCNCServer.AllHomed(), visible: linuxCNCServer.featuresMap().HIGH_SPEED_SPINDLE, click: linuxCNCServer.warmUpSpindle">
+                        <span data-bind="visible: warmupNeeded" title="Warm up required. E-Stop will be issued if spindle is commanded to turn on."><i class="icon-warning-sign"></i></span>
+                        {{nls.SpindleWarmup}}
+                    </button>
                 </td>
 
 <!--                <td class="width-button">

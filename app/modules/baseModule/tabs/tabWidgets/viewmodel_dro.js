@@ -49,6 +49,10 @@ define(function(require) {
                 $(event.currentTarget).val( self.linuxCNCServer.RmtDRO()[index].toFixed(self.linuxCNCServer.DisplayPrecision()) );
         }
 
+        self.warmupNeeded = ko.computed(function() {
+            return self.linuxCNCServer.vars['halpin_hss_warmup.warmup_needed'].data() == 'TRUE';
+        });
+
         self.spindleSpeed = ko.computed(
           function() {
             var spindleSpeedMeasured =  parseFloat(self.linuxCNCServer.vars['halpin_spindle_voltage.speed_measured'].data());
