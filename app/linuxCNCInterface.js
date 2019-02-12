@@ -1161,7 +1161,7 @@ define(function (require) {
             */
 
             lcncsvr.socket.onopen = function () {
-                lcncsvr.socket.send(JSON.stringify({"id": "LOGIN", "user": lcncsvr.server_username(), "password": lcncsvr.server_password()}));
+                lcncsvr.socket.send(JSON.stringify({"id": "LOGIN", "user": lcncsvr.server_username(), "password": lcncsvr.server_password(), date: new Date().toISOString() }));
                 lcncsvr.server_open(true);
                 lcncsvr.sendAllWatchRequests();
             }
