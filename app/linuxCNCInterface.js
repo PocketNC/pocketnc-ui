@@ -35,7 +35,7 @@ define(function (require) {
     lcncsvr.axisNames = ["X", "Y", "Z", "A", "B", "C", "U", "V", "W"];
 
     // Network settings
-    lcncsvr.server_address = ko.observable("192.168.7.2");
+    lcncsvr.server_address = ko.observable(location.hostname);
     lcncsvr.server_port = ko.observable("8000");
     lcncsvr.server_username = ko.observable("default");
     lcncsvr.server_password = ko.observable("default");
