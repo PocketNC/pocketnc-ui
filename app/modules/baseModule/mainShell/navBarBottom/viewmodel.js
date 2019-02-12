@@ -123,16 +123,23 @@ define(function(require) {
 		};
 
         this.currentMDIText = ko.observable("");
+        this.currentMDIText.subscribe( function(newval) {
+            self.sending(false);
+            self.success(false);
+        });
+        this.sending = ko.observable(false);
+        this.success = ko.observable(false);
+
         this.currentMDITextSetAndFocus = function(newval)
         {
-            self.linuxCNCServer.vars.mdiCmdSent(false);
             self.currentMDIText(newval);
             $('#navBottomMDIInput',self.Panel.getJQueryElement()).focus();
         };
 
         this.mdiInputKeyPress = function(d,e)
         {
-            self.linuxCNCServer.vars.mdiCmdSent(false);
+            self.sending(false);
+            self.success(false);
             if (self.mdiTypeAhead.shown)
                 return true;
 
@@ -141,18 +148,38 @@ define(function(require) {
             if (keyCode == 13) self.mdiExecute();
             return true;
         };
-        
+
         this.mdiExecute= function()
         {
             var mdiText = $('#navBottomMDIInput',self.Panel.getJQueryElement()).val();
-            $("#mdi-arrow").hide(); 
             if (! _.isEmpty(mdiText))
-            {
-                self.linuxCNCServer.mdi(mdiText);
+            {   
+                var timeStampId = "mdi" + Date.now();
+                var isSent = self.linuxCNCServer.mdi(timeStampId, mdiText);
+                if( isSent ){
+                    self.sending(true);
+                    self.success(false);
+                    var mdiListener = function(e) {
+                        var msg = JSON.parse(e.data);
+                        if((msg.id === timeStampId)){
+                            self.linuxCNCServer.socket.removeEventListener('message', mdiListener);
+                            if(msg.code === "?OK"){
+                                self.success(true);
+                            }
+                            self.sending(false);    
+                        }
+                    };
+                    self.linuxCNCServer.socket.addEventListener('message', mdiListener);
+                }
+                else{
+                    this.failure(true);
+                }
                 self.settings.addToMDIHistory( mdiText );
                 $('#navBottomMDIInput',self.Panel.getJQueryElement()).typeahead({ dropup: true, source: self.settings.persist.MDIHistory() });
             }
         }
+
+        
 
 	};
 

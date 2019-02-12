@@ -579,11 +579,10 @@ define(function (require) {
         return;
     }
     
-    lcncsvr.vars.mdiCmdSent = ko.observable(false);
-    lcncsvr.mdi = function( cmd )
+    lcncsvr.mdi = function( id="mdi", cmd )
     {
         if ($.isEmptyObject(cmd)) {
-            return;
+            return false;
         }
         var errorText = "MDI command cannot be executed, ";
         var isError = false;
@@ -605,11 +604,11 @@ define(function (require) {
                 title: "Alert",
                 text: errorText
             });
-            return;
+            return false;
         }
 
-        lcncsvr.vars.mdiCmdSent(true);
-        return lcncsvr.sendCommand("mdi","mdi",[cmd]);
+        lcncsvr.sendCommand(id,"mdi",[cmd]);
+        return true;
     }
 
     lcncsvr.prepare_for_mdi = function()
