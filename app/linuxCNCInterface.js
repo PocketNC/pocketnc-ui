@@ -579,11 +579,13 @@ define(function (require) {
         return;
     }
     
-    lcncsvr.mdi = function( id="mdi", cmd )
+    lcncsvr.mdi = function( cmd, id )
     {
         if ($.isEmptyObject(cmd)) {
             return false;
         }
+        id = id || "mdi";
+
         var errorText = "MDI command cannot be executed, ";
         var isError = false;
         if( lcncsvr.vars.task_state.data() !== lcncsvr.STATE_ON ){

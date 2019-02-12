@@ -1,9 +1,22 @@
 .mdiStatus {
-    color: green;
+    color: #98c676;
     position: absolute;
-    top: -9px;
-    left: 83%;
-    font-size: 0px;
-    -webkit-transition:  300ms cubic-bezier(0,1.8,0.7,.7);
+    top: -11px;
+    left: 84%;
+    font-size: 34px;
+    z-index: 10;
+    transform: scale(0);
+}
+
+.draw {
+    -webkit-transition:  300ms cubic-bezier(0,1.9,0.6,0.6);
+}
+
+.mdiSpinner {
+    color: #dddddd;
+    position: absolute;
+    top: -4px;
+    left: 87%;
+    font-size: 20px;
     z-index: 10;
 }

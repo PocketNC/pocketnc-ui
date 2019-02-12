@@ -155,10 +155,11 @@ define(function(require) {
             if (! _.isEmpty(mdiText))
             {   
                 var timeStampId = "mdi" + Date.now();
-                var isSent = self.linuxCNCServer.mdi(timeStampId, mdiText);
+                var isSent = self.linuxCNCServer.mdi(mdiText, timeStampId);
                 if( isSent ){
                     self.sending(true);
                     self.success(false);
+                    $('#mdiCheckmark').css('transform', 'scale(0)');
                     var mdiListener = function(e) {
                         var msg = JSON.parse(e.data);
                         if((msg.id === timeStampId)){
