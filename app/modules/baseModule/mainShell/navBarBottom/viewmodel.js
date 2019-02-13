@@ -138,14 +138,16 @@ define(function(require) {
 
         this.mdiInputKeyPress = function(d,e)
         {
-            self.sending(false);
-            self.success(false);
-            if (self.mdiTypeAhead.shown)
-                return true;
-
             e = e || window.event;
             var keyCode=(e.keyCode ? e.keyCode : e.which);
             if (keyCode == 13) self.mdiExecute();
+            return true;
+        };
+        
+        this.mdiInputKeyDown = function(d,e)
+        {
+            self.sending(false);
+            self.success(false);
             return true;
         };
 
