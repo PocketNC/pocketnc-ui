@@ -68,12 +68,6 @@ define(function(require) {
           }
         );
 
-        self.formatDisplayValue = function(rawVal)
-        {
-            if(Math.abs(rawVal) < 0.00001)
-                return 0;
-             return rawVal;
-        }
 	};
 
 	return ViewModel;

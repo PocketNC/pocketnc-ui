@@ -35,7 +35,7 @@ define(function (require) {
     lcncsvr.axisNames = ["X", "Y", "Z", "A", "B", "C", "U", "V", "W"];
 
     // Network settings
-    lcncsvr.server_address = ko.observable("192.168.7.2");
+    lcncsvr.server_address = ko.observable(location.hostname);
     lcncsvr.server_port = ko.observable("8000");
     lcncsvr.server_username = ko.observable("default");
     lcncsvr.server_password = ko.observable("default");
@@ -196,6 +196,16 @@ define(function (require) {
         } catch(ex) {}
     }
 
+    // Function to format position values for display and avoid flickering negative sign on near-zero values
+
+    lcncsvr.FormatDisplayNumber = function(rawVal)
+    {
+        minAbsVal = Math.pow(0.1, lcncsvr.DisplayPrecision());
+        if(Math.abs(rawVal) < minAbsVal){
+            rawVal = 0;
+        }
+        return rawVal.toFixed(lcncsvr.DisplayPrecision());
+    }
 
     // ***************
     // ***************
@@ -211,6 +221,14 @@ define(function (require) {
     lcncsvr.vars.g5x_offsetDisplay = { data: ko.computed(function(){ return lcncsvr.MachineUnitsToDisplayUnitsLinearPos(lcncsvr.vars.g5x_offset.data()) }), watched: false, local:true };
 
     lcncsvr.vars.g5x_index = { data: ko.observable(1), watched: true };
+    
+    //Clamp g5x_index because LinuxCNC improperly sets it to 0 on startup
+    lcncsvr.vars.g5x_index.data.subscribe( function(newval) {
+        if(newval < 1)
+            lcnc.vars.g5x_index(1);
+        else if (newval > 9)
+            lcnc.vars.g5x_index(9);
+    });
 
     lcncsvr.vars.g92_offset = { data: ko.observableArray([0, 0, 0, 0, 0, 0, 0, 0, 0]), watched: true };
     lcncsvr.vars.g92_offsetDisplay = { data: ko.computed(function(){ return lcncsvr.MachineUnitsToDisplayUnitsLinearPos(lcncsvr.vars.g92_offset.data()) }), watched: false, local:true };
@@ -251,9 +269,10 @@ define(function (require) {
             lcncsvr.ui_motion_line(newval[0]);
         }
     });
-    lcncsvr.vars.motion_line.data.subscribe(function (newval) {
-        if(lcncsvr.vars.interp_state.data() == 1) {
-            lcncsvr.ui_motion_line(newval);
+    lcncsvr.vars.interp_state.data.subscribe(function (newval) {
+        if(newval == lcncsvr.TASK_INTERP_IDLE){
+            lcncsvr.vars.motion_line.data(0);
+            lcncsvr.ui_motion_line(0);
         }
     });
 
@@ -602,7 +621,6 @@ define(function (require) {
     lcncsvr.stop = function()
     {
         lcncsvr.abort();
-        lcncsvr.sendCommand("wait_complete","wait_complete",["1"]);
         return;
     }
 
@@ -611,7 +629,7 @@ define(function (require) {
         if ($.isEmptyObject(cmd)) {
             return;
         }
-        if (!lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI)) {
+        if (!lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI)){
             return;
         }
         if (!lcncsvr.RmtManualInputAllowed()) {
@@ -761,9 +779,9 @@ define(function (require) {
 
     lcncsvr.setG5x = function( index )
     {
-        if (index < 0 || index >= 9)
+        if (index <= 0 || index > 9)
             return;
-
+        
         if (index <= 6)
             lcncsvr.mdi("G5" + (index + 3));
         else
@@ -827,9 +845,6 @@ define(function (require) {
 
     lcncsvr.jogIncr = function( axisNumber, dist )
     {
-        try {
-            dist = dist.toFixed(5);
-        } catch(ex){}
         try {
             lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MANUAL);
             lcncsvr.sendCommand( "JOG", "jog", ["JOG_INCREMENT", axisNumber, lcncsvr.jog_speed_fast(), dist ])

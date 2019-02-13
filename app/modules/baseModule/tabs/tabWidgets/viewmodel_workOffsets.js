@@ -10,6 +10,10 @@ define(function(require) {
         self.Panel = null;
         self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
         self.settings = moduleContext.getSettings();
+        
+        // we use unique IDs in the view, so increment the counter so the next instance of t his view model will get a new ID
+        // The modal dialogs need unique IDs globally, so each instance of this view must have different IDs for the modals
+        self.nextUniqueElementID = ko.observable(Date.now());
 
         this.getTemplate = function()
         {
@@ -20,17 +24,41 @@ define(function(require) {
             return nls;
         }
 
-		this.initialize = function( Panel ) {
+
+        this.initialize = function( Panel ) {
             if (self.Panel == null)
             {
                 self.Panel = Panel;
-
-                // we use unique IDs in the view, so increment the counter so the next instance of t his view model will get a new ID
-                // The modal dialogs need unique IDs globally, so each instance of this view must have different IDs for the modals
-                self.settings.globals.nextUniqueElementID = self.settings.globals.nextUniqueElementID + 1;
             }
-
-		};
+            
+            $(document).keydown(function(e){
+                if(e.keyCode == 13 || e.keyCode == 27){
+                    var modalStr = "";
+                    if($("#SelectToolModal" + self.nextUniqueElementID()).hasClass("in")){
+                        modalStr = "SetTool";
+                        self.tempToolNumber($("#inputToolSet").val());
+                    }
+                    else if($("#SelectOffsetG5xModal" + self.nextUniqueElementID()).hasClass("in")){
+                        modalStr = "SetG5x"
+                        self.tempOffset($("#inputOffsetG5xSet").val());
+                    }
+                    else if($("#SelectOffsetG92Modal" + self.nextUniqueElementID()).hasClass("in")){
+                        modalStr = "SetG92"
+                        self.tempOffset($("#inputOffsetG92Set").val());
+                    }
+                    
+                    if(modalStr !== ""){
+                        e.preventDefault();
+                        if(e.keyCode == 13){
+                            $("#save" + modalStr).click();
+                        }
+                        else{
+                            $("#cancel" + modalStr).click();
+                        }
+                    }
+                }
+            });
+	};
 
 
         self.tempToolNumber = ko.observable(self.linuxCNCServer.vars.tool_in_spindle.data());
