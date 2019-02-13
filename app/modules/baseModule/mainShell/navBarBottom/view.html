@@ -71,7 +71,7 @@
                                 <li><a data-bind="text: $data, click: $root.currentMDITextSetAndFocus.bind($data)"></a></li>
                             </ul>
                             <span style="position: relative">
-                                <input type="text"  data-bind="value: currentMDIText, event: {keydown: mdiInputKeyPress }" id="navBottomMDIInput" style="padding-right: 35px">
+                                <input type="text"  data-bind="value: currentMDIText, event: {keypress: mdiInputKeyPress }" id="navBottomMDIInput" style="padding-right: 35px">
                                 <span class="mdiSpinner icon-spinner icon-spin"data-bind=" style: { 'display': $root.sending() ? 'inline' : 'none'} "></span> 
                                 <span id="mdiCheckmark" class="mdiStatus icon-ok" data-bind="style: { 'transform': $root.success() ? 'scale(1)' : 'scale(0)'}, css: { draw: $root.success() } "></span> 
                             </span>
