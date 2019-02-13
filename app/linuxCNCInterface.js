@@ -224,6 +224,8 @@ define(function (require) {
     lcncsvr.vars.feedrate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
+    
+    lcncsvr.vars.run_time = { data: ko.observable(0), watched: false }
 
     lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
                                                // we'll use ui_motion_line in all the component that would otherwise use motion_line and 
@@ -1198,6 +1200,7 @@ define(function (require) {
 			window.location.reload(true);
                     }
                     if (lcncsvr.vars.hasOwnProperty(curID[0])) {
+                        console.log(curID[0]);
                         if (lcncsvr.vars[curID[0]].indexed)
                         {
                             if (lcncsvr.vars[curID[0]].convert_to_json) {
@@ -1212,6 +1215,10 @@ define(function (require) {
                             else
                                 lcncsvr.vars[curID[0]].data(data.data);
                         }
+                        if (lcncsvr.vars[curID[0]].convert_to_json)
+                            console.log(JSON.parse(data.data));
+                        else
+                            console.log(data.data);
                     }
                 } catch (ex) {
 //                    console.debug(ex);

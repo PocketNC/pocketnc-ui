@@ -21,15 +21,10 @@
 
                 <table class="table table table-condensed">
                     <tr class="borderless-table">
-                    <!--Optional Stop-->
-
-                        <td>
-                            <label for="run_opstop_toggle_cb"><h5>{{nls.OptionalStop}}:</h5></label>
-                            <span id="run_opstop_toggle" class="switch" data-on="success" data-off="primary" data-bind="event: { 'switch-change': setOptionalStop }">
-                            <input id="run_opstop_toggle_cb" type="checkbox"> </span>
-                        </td>
-
-
+                    
+                        <td>CLOCK</td>
+                    
+                        
 
                         <!-- <td>
                             <label for="run_sstep_toggle_cb"><h5>{{nls.SingleStep}}:</h5></label>
@@ -39,7 +34,7 @@
                             </span>
                         </td>-->
 
-                        <td style="width:110px;">
+                        <td style="width:110px;" rowspan="2">
                             <div class="sliders-vertical">
                                 <span id="run_maxvel_slider" class="slider-primary" data-bind="css: {'slider-primary': true}"></span>
                             </div>
@@ -53,7 +48,7 @@
                             </div>
                         </td>
 
-                        <td style="width:110px;">
+                        <td style="width:110px;" rowspan="2">
                             <div class="sliders-vertical">
                                 <span id="run_feed_rate_slider" class="slider-primary" data-bind="css: {'slider-primary': linuxCNCServer.vars.feedrate.data() <= 1, 'slider-warning': linuxCNCServer.vars.feedrate.data() > 1 }"></span>
                             </div>
@@ -67,7 +62,7 @@
                             </div>
                         </td>
 
-                        <td style="width:110px;">
+                        <td style="width:110px;" rowspan="2">
                             <div class="sliders-vertical">
                                 <span id="run_spindle_rate_slider" class="slider-primary" data-bind="css: {'slider-primary': linuxCNCServer.vars.spindlerate.data() <= 1, 'slider-warning': linuxCNCServer.vars.spindlerate.data() > 1 }"></span>
                             </div>
@@ -83,6 +78,15 @@
 
 
                     </tr>
+                    <tr>
+                    <!--Optional Stop-->
+                        <td>
+                            <label for="run_opstop_toggle_cb"><h5>{{nls.OptionalStop}}:</h5></label>
+                            <span id="run_opstop_toggle" class="switch" data-on="success" data-off="primary" data-bind="event: { 'switch-change': setOptionalStop }">
+                            <input id="run_opstop_toggle_cb" type="checkbox"> </span>
+                        </td>
+                    </tr>
+
                  </table>
             </div>
         </div>
