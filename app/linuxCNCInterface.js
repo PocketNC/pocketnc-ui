@@ -233,9 +233,10 @@ define(function (require) {
             lcncsvr.ui_motion_line(newval[0]);
         }
     });
-    lcncsvr.vars.motion_line.data.subscribe(function (newval) {
-        if(lcncsvr.vars.interp_state.data() == 1) {
-            lcncsvr.ui_motion_line(newval);
+    lcncsvr.vars.interp_state.data.subscribe(function (newval) {
+        if(newval == lcncsvr.TASK_INTERP_IDLE){
+            lcncsvr.vars.motion_line.data(0);
+            lcncsvr.ui_motion_line(0);
         }
     });
 
@@ -575,7 +576,6 @@ define(function (require) {
     lcncsvr.stop = function()
     {
         lcncsvr.abort();
-        lcncsvr.sendCommand("wait_complete","wait_complete",["1"]);
         return;
     }
 
