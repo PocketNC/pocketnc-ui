@@ -801,9 +801,6 @@ define(function (require) {
     lcncsvr.jogIncr = function( axisNumber, dist )
     {
         try {
-            dist = dist.toFixed(5);
-        } catch(ex){}
-        try {
             lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MANUAL);
             lcncsvr.sendCommand( "JOG", "jog", ["JOG_INCREMENT", axisNumber, lcncsvr.jog_speed_fast(), dist ])
         } catch(ex){}
