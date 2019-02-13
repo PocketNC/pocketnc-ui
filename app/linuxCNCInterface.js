@@ -179,6 +179,16 @@ define(function (require) {
         } catch(ex) {}
     }
 
+    // Function to format position values for display and avoid flickering negative sign on near-zero values
+
+    lcncsvr.FormatDisplayNumber = function(rawVal)
+    {
+        minAbsVal = Math.pow(0.1, lcncsvr.DisplayPrecision());
+        if(Math.abs(rawVal) < minAbsVal){
+            rawVal = 0;
+        }
+        return rawVal.toFixed(lcncsvr.DisplayPrecision());
+    }
 
     // ***************
     // ***************
@@ -194,6 +204,14 @@ define(function (require) {
     lcncsvr.vars.g5x_offsetDisplay = { data: ko.computed(function(){ return lcncsvr.MachineUnitsToDisplayUnitsLinearPos(lcncsvr.vars.g5x_offset.data()) }), watched: false, local:true };
 
     lcncsvr.vars.g5x_index = { data: ko.observable(1), watched: true };
+    
+    //Clamp g5x_index because LinuxCNC improperly sets it to 0 on startup
+    lcncsvr.vars.g5x_index.data.subscribe( function(newval) {
+        if(newval < 1)
+            lcnc.vars.g5x_index(1);
+        else if (newval > 9)
+            lcnc.vars.g5x_index(9);
+    });
 
     lcncsvr.vars.g92_offset = { data: ko.observableArray([0, 0, 0, 0, 0, 0, 0, 0, 0]), watched: true };
     lcncsvr.vars.g92_offsetDisplay = { data: ko.computed(function(){ return lcncsvr.MachineUnitsToDisplayUnitsLinearPos(lcncsvr.vars.g92_offset.data()) }), watched: false, local:true };
@@ -584,7 +602,7 @@ define(function (require) {
         if ($.isEmptyObject(cmd)) {
             return;
         }
-        if (!lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI)) {
+        if (!lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI)){
             return;
         }
         if (!lcncsvr.RmtManualInputAllowed()) {
@@ -734,9 +752,9 @@ define(function (require) {
 
     lcncsvr.setG5x = function( index )
     {
-        if (index < 0 || index >= 9)
+        if (index <= 0 || index > 9)
             return;
-
+        
         if (index <= 6)
             lcncsvr.mdi("G5" + (index + 3));
         else
