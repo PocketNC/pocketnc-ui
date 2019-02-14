@@ -1,0 +1,1468 @@
+diff --git a/app/linuxCNCInterface.js b/app/linuxCNCInterface.js
+index 33e4ab5..81050cb 100644
+--- a/app/linuxCNCInterface.js
++++ b/app/linuxCNCInterface.js
+@@ -44,34 +44,17 @@ define(function (require) {
+     lcncsvr.server_open = ko.observable(false);
+     lcncsvr.server_logged_in = ko.observable(false);
+     lcncsvr.serverReconnectCheckInterval = 2000;
+-    lcncsvr.serverReconnectHBTimeoutInterval = 5000;
++    lcncsvr.serverReconnectHBTimeoutInterval = 30000;
+ 
+     lcncsvr.jog_step = ko.observable(0.001);
+     lcncsvr.jog_speed_fast = ko.observable(1);
+     lcncsvr.jog_speed_slow = ko.observable(1);
+ 
+-    lcncsvr.features = ko.observableArray([]);
+-    lcncsvr.featuresMap = ko.computed(function() {
+-      var features = lcncsvr.features();
+-      var map = {};
+-      features.forEach(function(feature) {
+-        map[feature] = true;
+-      });
+-
+-      return map;
+-    });
+-
+-    lcncsvr.featuresMap.subscribe(function(newval) {
+-      lcncsvr.sendAllWatchRequests(true);
+-    });
+-
+     lcncsvr.vars = {};
+     lcncsvr.vars.client_config = { data: ko.observable({invalid:true}), watched: true, convert_to_json: true };
+     lcncsvr.vars.linear_units = { data: ko.observable(1), watched: true };
+     lcncsvr.vars.program_units = { data: ko.observable(0), watched: true };
+     lcncsvr.vars["halpin_halui.max-velocity.value"] = { data: ko.observable("1"), watched: true };
+-    lcncsvr.vars["halpin_spindle_voltage.speed_measured"] = { data: ko.observable("1"), watched: true };
+-    lcncsvr.vars["halpin_hss_warmup.warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
+ 
+     lcncsvr.isClientConfigValid = function()
+     {
+@@ -196,16 +179,6 @@ define(function (require) {
+         } catch(ex) {}
+     }
+ 
+-    // Function to format position values for display and avoid flickering negative sign on near-zero values
+-
+-    lcncsvr.FormatDisplayNumber = function(rawVal)
+-    {
+-        minAbsVal = Math.pow(0.1, lcncsvr.DisplayPrecision());
+-        if(Math.abs(rawVal) < minAbsVal){
+-            rawVal = 0;
+-        }
+-        return rawVal.toFixed(lcncsvr.DisplayPrecision());
+-    }
+ 
+     // ***************
+     // ***************
+@@ -221,14 +194,6 @@ define(function (require) {
+     lcncsvr.vars.g5x_offsetDisplay = { data: ko.computed(function(){ return lcncsvr.MachineUnitsToDisplayUnitsLinearPos(lcncsvr.vars.g5x_offset.data()) }), watched: false, local:true };
+ 
+     lcncsvr.vars.g5x_index = { data: ko.observable(1), watched: true };
+-    
+-    //Clamp g5x_index because LinuxCNC improperly sets it to 0 on startup
+-    lcncsvr.vars.g5x_index.data.subscribe( function(newval) {
+-        if(newval < 1)
+-            lcnc.vars.g5x_index(1);
+-        else if (newval > 9)
+-            lcnc.vars.g5x_index(9);
+-    });
+ 
+     lcncsvr.vars.g92_offset = { data: ko.observableArray([0, 0, 0, 0, 0, 0, 0, 0, 0]), watched: true };
+     lcncsvr.vars.g92_offsetDisplay = { data: ko.computed(function(){ return lcncsvr.MachineUnitsToDisplayUnitsLinearPos(lcncsvr.vars.g92_offset.data()) }), watched: false, local:true };
+@@ -244,7 +209,6 @@ define(function (require) {
+     lcncsvr.vars.paused = { data: ko.observable(false), watched: true };
+     lcncsvr.vars.mist =  { data: ko.observable(false), watched: true };
+     lcncsvr.vars.flood =  { data: ko.observable(false), watched: true };
+-    lcncsvr.vars.spindle_enabled = { data: ko.observable(false), watched: true };
+     lcncsvr.vars.spindle_brake = { data: ko.observable(false), watched: true };
+     lcncsvr.vars.spindle_speed = { data: ko.observable(0), watched: true };
+     lcncsvr.vars.tool_in_spindle = { data: ko.observable(0), watched: true };
+@@ -260,7 +224,16 @@ define(function (require) {
+     lcncsvr.vars.feedrate = { data: ko.observable(1), watched: true };
+     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
+     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
+-
++    
++    lcncsvr.vars.cycleSeconds = { data: ko.observable(0), watched: true };
++    lcncsvr.vars.cycleSeconds.data.subscribe(function (newval) {
++        console.log('GOT CYCLE TIME');
++    });
++   
++    lcncsvr.vars.cycleTime = { data: ko.observable(0), watched: true };
++    lcncsvr.vars.cycleTime.data.subscribe(function (newval) {
++        console.log('GOT CYCLE TIME');
++    });
+     lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
+                                                // we'll use ui_motion_line in all the component that would otherwise use motion_line and 
+                                                // populate it ourselves with the best value
+@@ -269,10 +242,9 @@ define(function (require) {
+             lcncsvr.ui_motion_line(newval[0]);
+         }
+     });
+-    lcncsvr.vars.interp_state.data.subscribe(function (newval) {
+-        if(newval == lcncsvr.TASK_INTERP_IDLE){
+-            lcncsvr.vars.motion_line.data(0);
+-            lcncsvr.ui_motion_line(0);
++    lcncsvr.vars.motion_line.data.subscribe(function (newval) {
++        if(lcncsvr.vars.interp_state.data() == 1) {
++            lcncsvr.ui_motion_line(newval);
+         }
+     });
+ 
+@@ -281,18 +253,17 @@ define(function (require) {
+     lcncsvr.vars.axis_mask = { data: ko.observable(0), watched: true };
+     lcncsvr.vars.backplot_async = { data: ko.observable(""), watched: false, convert_to_json: true, local:true };
+     lcncsvr.vars.file.data.subscribe( function(newval){ lcncsvr.socket.send(JSON.stringify({"id": "backplot_async", "command": "get", "name": "backplot_async"})); });
+-    lcncsvr.vars.file_content = { data: ko.observableArray([]), watched: false, local:true };
++    lcncsvr.vars.file_content = { data: ko.observable(""), watched: false, local:true };
++    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval) lcncsvr.requestFileContent() });
+ 
+     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
+     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
+     lcncsvr.vars.board_revision = { data: ko.observable(""), watched: false };
+-    lcncsvr.vars.dogtag = { data: ko.observable(""), watched: false };
+     lcncsvr.vars.system_status = { data: ko.observable(""), watched: false };
+ 
+     lcncsvr.filteredVersions = ko.computed(function() {
+         var versions = lcncsvr.vars.versions.data();
+         var boardRev = lcncsvr.vars.board_revision.data();
+-        var dogtag = lcncsvr.vars.dogtag.data();
+ 
+         if(boardRev != "v2revP") {
+             var index = versions.indexOf("v3.0.0");
+@@ -303,15 +274,6 @@ define(function (require) {
+             }
+         }
+ 
+-        if(dogtag != "BeagleBoard.org Debian Image 2015-02-01") {
+-            var index = versions.indexOf("v4.0.0");
+-            if(index > -1) {
+-                versions = versions.slice(index);
+-            } else {
+-                versions = [];
+-            }
+-        }
+-
+         return versions;
+     }); 
+ 
+@@ -325,6 +287,7 @@ define(function (require) {
+             console.log("SERVER_LOGGED_IN: " + newval);
+             lcncsvr.vars.file.data("");
+             lcncsvr.vars.backplot_async.data("");
++            lcncsvr.vars.file_content.data("");
+         }
+     });
+ 
+@@ -568,7 +531,7 @@ define(function (require) {
+     {
+         if ( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO))
+             return;
+-
++        
+         lcncsvr.sendCommand("auto","auto",["AUTO_RUN",lineNum.toString()])
+     }
+ 
+@@ -621,41 +584,22 @@ define(function (require) {
+     lcncsvr.stop = function()
+     {
+         lcncsvr.abort();
++        lcncsvr.sendCommand("wait_complete","wait_complete",["1"]);
+         return;
+     }
+-    
+-    lcncsvr.mdi = function( cmd, id )
++
++    lcncsvr.mdi = function( cmd )
+     {
+         if ($.isEmptyObject(cmd)) {
+-            return false;
+-        }
+-        id = id || "mdi";
+-
+-        var errorText = "MDI command cannot be executed, ";
+-        var isError = false;
+-        if( lcncsvr.vars.task_state.data() !== lcncsvr.STATE_ON ){
+-            errorText += "machine must be out of E-stop and turned on";
+-            isError = true;
+-        }
+-        else if( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI) ) {
+-            errorText += "unable to set mode to MDI";
+-            isError = true;
++            return;
+         }
+-        else if( ( lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_IDLE ) && lcncsvr.vars.queue_full.data() ){
+-            errorText += "interpreter not idle and trajectory planner queue is full"
+-            isError = true;
++        if (!lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI)) {
++            return;
+         }
+-        if(isError){
+-            $.pnotify({
+-                type: "error",
+-                title: "Alert",
+-                text: errorText
+-            });
+-            return false;
++        if (!lcncsvr.RmtManualInputAllowed()) {
++            return;
+         }
+-
+-        lcncsvr.sendCommand(id,"mdi",[cmd]);
+-        return true;
++        return lcncsvr.sendCommand("mdi","mdi",[cmd]);
+     }
+ 
+     lcncsvr.prepare_for_mdi = function()
+@@ -799,9 +743,9 @@ define(function (require) {
+ 
+     lcncsvr.setG5x = function( index )
+     {
+-        if (index <= 0 || index > 9)
++        if (index < 0 || index >= 9)
+             return;
+-        
++
+         if (index <= 6)
+             lcncsvr.mdi("G5" + (index + 3));
+         else
+@@ -866,6 +810,9 @@ define(function (require) {
+     lcncsvr.jogIncr = function( axisNumber, dist )
+     {
+         try {
++            dist = dist.toFixed(5);
++        } catch(ex){}
++        try {
+             lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MANUAL);
+             lcncsvr.sendCommand( "JOG", "jog", ["JOG_INCREMENT", axisNumber, lcncsvr.jog_speed_fast(), dist ])
+         } catch(ex){}
+@@ -1011,7 +958,7 @@ define(function (require) {
+     {
+         if (_.isNumber(zOffset))
+             zOffset = zOffset.toFixed(6);
+- 
++
+         lcncsvr.mdi( "G10 L10 P" + lcncsvr.vars.tool_in_spindle.data() + " Z" + zOffset );
+         lcncsvr.mdi( "G43" );
+     }
+@@ -1067,14 +1014,6 @@ define(function (require) {
+         lcncsvr.refreshSystemStatus();
+     }
+ 
+-    lcncsvr.warmUpSpindle = function() {
+-        lcncsvr.mdi("M670");
+-    }
+-
+-    lcncsvr.getFeatures = function() {
+-        lcncsvr.socket.send(JSON.stringify({"id": "get_features", "command": "get", "name": "config_item", "section": "POCKETNC_FEATURES", "parameter": "" }));
+-    }
+-
+     lcncsvr.getINIConfigParameter = function(section, parameter) {
+         lcncsvr.socket.send(JSON.stringify({"id": "ini_config_parameter", "command": "get", "name": "config_item", "section": section, "parameter": parameter }));
+     }
+@@ -1110,28 +1049,21 @@ define(function (require) {
+         lcncsvr.sendCommand("program_delete","program_delete",[filename]);
+     }
+ 
+-    lcncsvr.uploadGCode = function(filename, data) {
+-        lcncsvr.sendCommand("program_upload","program_upload",[filename, data]);
++    lcncsvr.requestFileContent = function() {
++        lcncsvr.socket.send(JSON.stringify({"id": "file_content", "command": "get", "name": "file_content"}));
+     }
+ 
+-    lcncsvr.uploadChunkGCode = function(filename, data, start, end, ovw) {
+-        lcncsvr.sendCommand("program_upload_chunk","program_upload_chunk",[filename, data, start, end, ovw]);
++    lcncsvr.uploadGCode = function(filename, data) {
++        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
++        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
++        lcncsvr.sendCommand("program_upload","program_upload",[filename, data]);
+     }
+ 
+-    lcncsvr.downloadChunkGCode = function(requestId, fileIdx, chunkSize) {
+-        lcncsvr.sendCommand(requestId, "program_download_chunk",[fileIdx, chunkSize]);
+-    }
+-    
+-    lcncsvr.sendAllWatchRequests = function (doRequiresFeature) {
++    lcncsvr.sendAllWatchRequests = function () {
+         try {
+             var id;
+             var delayval = 0;
+             $.each(lcncsvr.vars, function (key, val) {
+-                // this will be called once immediately after opening the web socket
+-                // and once again after we know what features the machine has
+-                if((doRequiresFeature && val.requiresFeature && lcncsvr.featuresMap()[val.requiresFeature]) ||
+-                   (!doRequiresFeature && !val.requiresFeature)) {
+-
+                 if (val.watched) {
+                     //console.debug("WEBSOCKET: send watch request for " + key);
+                     if (key == "actual_position")
+@@ -1179,9 +1111,7 @@ define(function (require) {
+                 }
+                     } catch(ex) {}
+                 }
+-              }
+             });
+-
+         } catch (ex) {
+         }
+     }
+@@ -1227,10 +1157,8 @@ define(function (require) {
+             */
+ 
+             lcncsvr.socket.onopen = function () {
+-                lcncsvr.socket.send(JSON.stringify({"id": "LOGIN", "user": lcncsvr.server_username(), "password": lcncsvr.server_password(), date: new Date().toISOString() }));
++                lcncsvr.socket.send(JSON.stringify({"id": "LOGIN", "user": lcncsvr.server_username(), "password": lcncsvr.server_password()}));
+                 lcncsvr.server_open(true);
+-
+-                lcncsvr.getFeatures();
+                 lcncsvr.sendAllWatchRequests();
+             }
+ 
+@@ -1243,19 +1171,6 @@ define(function (require) {
+                         return;
+                     }
+ 
+-                    if(data.id == "get_features") {
+-                      var params = [];
+-                      data.data.parameters.forEach(function(param) {
+-                        var name = param.values.name;
+-                        var value = param.values.value;
+-
+-                        if(value === "1") {
+-                          params.push(name);
+-                        }
+-                      });
+-                      lcncsvr.features(params);
+-                    }
+-
+                     if(data.id == "HB" && lcncsvr.refreshOnNextHB) {
+                         console.log("reloading...");
+                         window.location.reload(true);
+@@ -1292,6 +1207,7 @@ define(function (require) {
+ 			window.location.reload(true);
+                     }
+                     if (lcncsvr.vars.hasOwnProperty(curID[0])) {
++                        console.log(curID[0]);
+                         if (lcncsvr.vars[curID[0]].indexed)
+                         {
+                             if (lcncsvr.vars[curID[0]].convert_to_json) {
+@@ -1306,6 +1222,10 @@ define(function (require) {
+                             else
+                                 lcncsvr.vars[curID[0]].data(data.data);
+                         }
++                        if (lcncsvr.vars[curID[0]].convert_to_json)
++                            console.log(JSON.parse(data.data));
++                        else
++                            console.log(data.data);
+                     }
+                 } catch (ex) {
+ //                    console.debug(ex);
+diff --git a/app/modules/baseModule/mainShell/navBarBottom/style.css b/app/modules/baseModule/mainShell/navBarBottom/style.css
+index 8fa3f31..e69de29 100644
+--- a/app/modules/baseModule/mainShell/navBarBottom/style.css
++++ b/app/modules/baseModule/mainShell/navBarBottom/style.css
+@@ -1,22 +0,0 @@
+-.mdiStatus {
+-    color: #98c676;
+-    position: absolute;
+-    top: -5px;
+-    right: 0px;
+-    font-size: 20px;
+-    z-index: 10;
+-    transform: scale(0);
+-}
+-
+-.draw {
+-    -webkit-transition:  300ms cubic-bezier(0,1.9,0.6,0.6);
+-}
+-
+-.mdiSpinner {
+-    color: #dddddd;
+-    position: absolute;
+-    top: -2px;
+-    right: 1px;
+-    font-size: 15px;
+-    z-index: 10;
+-}
+diff --git a/app/modules/baseModule/mainShell/navBarBottom/view.html b/app/modules/baseModule/mainShell/navBarBottom/view.html
+index a794cd8..9559828 100644
+--- a/app/modules/baseModule/mainShell/navBarBottom/view.html
++++ b/app/modules/baseModule/mainShell/navBarBottom/view.html
+@@ -70,11 +70,7 @@
+                             <ul class="dropdown-menu" data-bind="foreach: settings.persist.MDIHistory">
+                                 <li><a data-bind="text: $data, click: $root.currentMDITextSetAndFocus.bind($data)"></a></li>
+                             </ul>
+-                            <span style="position: relative">
+-                                <input type="text"  data-bind="value: currentMDIText, event: { keypress: mdiInputKeyPress, keydown: mdiInputKeyDown }" id="navBottomMDIInput" style="padding-right: 35px">
+-                                <span class="mdiSpinner icon-spinner icon-spin"data-bind=" style: { 'display': $root.sending() ? 'inline' : 'none'} "></span> 
+-                                <span id="mdiCheckmark" class="mdiStatus icon-ok" data-bind="style: { 'transform': $root.success() ? 'scale(1)' : 'scale(0)'}, css: { draw: $root.success() } "></span> 
+-                            </span>
++                            <input type="text" data-bind="value: currentMDIText, event: {keypress: mdiInputKeyPress }" id="navBottomMDIInput">
+                             <button class="btn btn-primary" data-bind="click: function(){currentMDITextSetAndFocus('');} "><i class="icon-remove-sign"></i></button>
+                         </div>
+                     </div>
+diff --git a/app/modules/baseModule/mainShell/navBarBottom/viewmodel.js b/app/modules/baseModule/mainShell/navBarBottom/viewmodel.js
+index 58cd142..2ca1377 100644
+--- a/app/modules/baseModule/mainShell/navBarBottom/viewmodel.js
++++ b/app/modules/baseModule/mainShell/navBarBottom/viewmodel.js
+@@ -123,13 +123,6 @@ define(function(require) {
+ 		};
+ 
+         this.currentMDIText = ko.observable("");
+-        this.currentMDIText.subscribe( function(newval) {
+-            self.sending(false);
+-            self.success(false);
+-        });
+-        this.sending = ko.observable(false);
+-        this.success = ko.observable(false);
+-
+         this.currentMDITextSetAndFocus = function(newval)
+         {
+             self.currentMDIText(newval);
+@@ -138,52 +131,27 @@ define(function(require) {
+ 
+         this.mdiInputKeyPress = function(d,e)
+         {
++            if (self.mdiTypeAhead.shown)
++                return true;
++
+             e = e || window.event;
+             var keyCode=(e.keyCode ? e.keyCode : e.which);
+             if (keyCode == 13) self.mdiExecute();
+             return true;
+         };
+-        
+-        this.mdiInputKeyDown = function(d,e)
+-        {
+-            self.sending(false);
+-            self.success(false);
+-            return true;
+-        };
+ 
+         this.mdiExecute= function()
+         {
+             var mdiText = $('#navBottomMDIInput',self.Panel.getJQueryElement()).val();
++
+             if (! _.isEmpty(mdiText))
+-            {   
+-                var timeStampId = "mdi" + Date.now();
+-                var isSent = self.linuxCNCServer.mdi(mdiText, timeStampId);
+-                if( isSent ){
+-                    self.sending(true);
+-                    self.success(false);
+-                    $('#mdiCheckmark').css('transform', 'scale(0)');
+-                    var mdiListener = function(e) {
+-                        var msg = JSON.parse(e.data);
+-                        if((msg.id === timeStampId)){
+-                            self.linuxCNCServer.socket.removeEventListener('message', mdiListener);
+-                            if(msg.code === "?OK"){
+-                                self.success(true);
+-                            }
+-                            self.sending(false);    
+-                        }
+-                    };
+-                    self.linuxCNCServer.socket.addEventListener('message', mdiListener);
+-                }
+-                else{
+-                    this.failure(true);
+-                }
++            {
++                self.linuxCNCServer.mdi(mdiText);
+                 self.settings.addToMDIHistory( mdiText );
+                 $('#navBottomMDIInput',self.Panel.getJQueryElement()).typeahead({ dropup: true, source: self.settings.persist.MDIHistory() });
+             }
+         }
+ 
+-        
+-
+ 	};
+ 
+ 	return ViewModel;
+diff --git a/app/modules/baseModule/tabs/tabWidgets/nls/resources.js b/app/modules/baseModule/tabs/tabWidgets/nls/resources.js
+index 81a3f7a..669b777 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/nls/resources.js
++++ b/app/modules/baseModule/tabs/tabWidgets/nls/resources.js
+@@ -6,8 +6,6 @@ define({
+         "Zero": "Zero",
+         "HomeAll": "Home All",
+ 
+-        "SpindleWarmup": "Warm Up",
+-
+         "JogTitle" : "Jog",
+         "JogAxesLabel" : "Axes",
+         "JogWithMouseWheel": "Jog With Mouse Wheel",
+diff --git a/app/modules/baseModule/tabs/tabWidgets/view_dro.html b/app/modules/baseModule/tabs/tabWidgets/view_dro.html
+index 42edf2a..2897b1b 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/view_dro.html
++++ b/app/modules/baseModule/tabs/tabWidgets/view_dro.html
+@@ -16,9 +16,9 @@
+                                $root.onDROValChange(data,event,$data)}, blur:
+                                function(data,event){
+                                    $root.onDROValChange(data,event,$data) } },
+-                                   value: ($root.linuxCNCServer.FormatDisplayNumber(
+-                                   $root.linuxCNCServer.RmtDRO()[$data])),
+-                                   attr:{id: (($data).toString()+'droax') }
++                                   value: ($root.formatDisplayValue(
++                                   $root.linuxCNCServer.RmtDRO()[$data]).toFixed($root.linuxCNCServer.DisplayPrecision())
++                                   ), attr:{id: (($data).toString()+'droax') }
+                                    ">
+                 </td>
+ 
+@@ -43,31 +43,10 @@
+ 
+         </tbody>
+     </table>
+-    <table class="table table-condensed-no-border">
+-        <tbody>
+-            <tr class="borderless-table">
+-                <td class="width-axis-label ">
+-                    <label for="spindle_speed" 
+-                           class="label big-label span12 label-info" style="text-align: center;">S:</label>
+-                </td>
+ 
+-                <td class="">
+-                    <input id="spindle_speed" data-bind="value: spindleSpeed" type="text" class="input span12" style="width: 80px;text-align: left; font-weight:bold; float: left"/>
+-                    <button class="btn xbtn-primary" style="margin-left: 5px" data-bind="enable: linuxCNCServer.AllHomed(), visible: linuxCNCServer.featuresMap().HIGH_SPEED_SPINDLE, click: linuxCNCServer.warmUpSpindle">
+-                        <span data-bind="visible: warmupNeeded" title="Warm up required. E-Stop will be issued if spindle is commanded to turn on."><i class="icon-warning-sign"></i></span>
+-                        {{nls.SpindleWarmup}}
+-                    </button>
+-                </td>
+-
+-<!--                <td class="width-button">
+-                </td>-->
+-
+-                <td class="width-button">
+-                    <button class="width-button btn xbtn-primary" data-bind="click: linuxCNCServer.homeAll">{{nls.HomeAll}}</button>
+-                </td>
+-            </tr>
+-
+-        </tbody>
+-    </table>
++    <div class="btn-toolbar">
++        <button id="spindleRateBut" class="btn width-button-larger" style="text-align: center; " ><span data-bind="text: linuxCNCServer.vars.spindle_speed.data"></span> RPM</button>
++        <button class="btn xbtn-primary" data-bind="click: linuxCNCServer.homeAll">{{nls.HomeAll}}</button>
++    </div>
+ 
+ </div>
+diff --git a/app/modules/baseModule/tabs/tabWidgets/view_file.html b/app/modules/baseModule/tabs/tabWidgets/view_file.html
+index 8ba22a2..1e599d5 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/view_file.html
++++ b/app/modules/baseModule/tabs/tabWidgets/view_file.html
+@@ -1,13 +1,6 @@
+ <div class="well well-with-label">
+ 
+-        <span class="well-label">
+-            <span style="float: left; width: 20%; display: list-item;"></span>
+-            <span id="download-spinner" title="Fetching file contents from PocketNC" data-bind="style: { 'visibility': progressDiv() ? 'visible' : 'hidden' }" style="visibility: hidden; float: right; width: 20%; text-align: right; padding-right: 0.5em;">
+-                <i class="icon icon-spinner icon-spin"></i>
+-                <span data-bind="text: downloadProgress"></span><span>%</span>
+-            </span>
+-            <span>{{nls.FileTitle}}</span>
+-        </span>
++        <span class="well-label"><span>{{nls.FileTitle}}</span></span>
+ 
+         <div class="FileListTable"></div>
+ 
+diff --git a/app/modules/baseModule/tabs/tabWidgets/view_fileopen.html b/app/modules/baseModule/tabs/tabWidgets/view_fileopen.html
+index 51ffb84..36cef72 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/view_fileopen.html
++++ b/app/modules/baseModule/tabs/tabWidgets/view_fileopen.html
+@@ -10,12 +10,6 @@
+ .file_hover:hover .btn {
+     color: #333333;
+ }
+-.progress, .cancel{
+-    display: inline;
+-}
+-.cancel{
+-    float: right;
+-}
+ </style>
+ <div class="well well-with-label">
+ 
+@@ -44,28 +38,6 @@
+   </div>
+ </div>
+ 
+-<div class="modal fade" id="fileOverwriteModal" tabindex="-1" role="dialog" aria-labelledby="fileOverwriteLabel" aria-hidden="true">
+-  <div class="modal-dialog" role="document">
+-    <div class="modal-content">
+-      <div class="modal-header">
+-        <h5 class="modal-title" id="fileOverwriteModalLabel">Do you want to overwrite the existing file with the same name?
+-        <button type="button" class="close" data-dismiss="modal" aria-label="Cancel">
+-          <span aria-hidden="true">&times;</span>
+-        </button>
+-        </h5>
+-      </div>
+-      <div class="modal-body">
+-          Are you sure you want to overwrite <span data-bind="text: fileName">insert file here</span>? This operation cannot be undone.
+-      </div>
+-      <div class="modal-footer">
+-        <button type="button" class="btn btn-secondary" data-dismiss="modal" data-bind="click: function() { cancelUpload() }" >Cancel</button>
+-        <button type="button" class="btn btn-danger" data-dismiss="modal" data-bind="click: function() { let e = document.getElementById('upload'); e.setAttribute('title', e.getAttribute('title') + ' - Overwrite' ); upload(); }">Overwrite</button>
+-      </div>
+-    </div>
+-  </div>
+-</div>
+-
+-
+             <table class="table table-condensed">
+                 <tbody>
+                 <tr class="borderless-table">
+@@ -88,31 +60,16 @@
+ 
+                     <td>
+                         <span class="btn btn-file width-button-larger">
+-                            <span data-bind="style: { color: isUploading() ? 'grey' : 'black' }" class="">{{nls.SelectNew}}</span>
+-                            <input id="file_input" type="file" data-bind="disable: isUploading"/>
++                            <span class="">{{nls.SelectNew}}</span>
++                            <input id="file_input" type="file"/>
+                         </span>
+ 
+-                    </td>
+-                    
++                </td>
+                 </tr>
+-
+-
+-                </tbody>                
++                </tbody>
+             </table>
+-            <div id="upload" style="display: none;">
+-                <div style="width: 75%">
+-                    <div class="progress" style="height: 32px; display: flex">
+-                        <div class="bar" id="upload-bar" data-bind="style: { width: uploadPercent() }">
+-                            <div id="upload-bar-text" style="line-height: 30px"data-bind="text: uploadPercent"></div>
+-                        </div>
+-                    </div>
+-                </div>
+-                <div id="cancel" class="cancel">
+-                    <button data-bind="click: cancelUpload" id="cancel-btn" type="button" class="btn btn-warning">Cancel</button>
+-                </div>
+-            </div>
+-       
+-       </div>
++
++        </div>
+     </div>
+ 
+ </div>
+diff --git a/app/modules/baseModule/tabs/tabWidgets/view_run.html b/app/modules/baseModule/tabs/tabWidgets/view_run.html
+index 7a94570..ff3c2ed 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/view_run.html
++++ b/app/modules/baseModule/tabs/tabWidgets/view_run.html
+@@ -21,15 +21,10 @@
+ 
+                 <table class="table table table-condensed">
+                     <tr class="borderless-table">
+-                    <!--Optional Stop-->
+-
+-                        <td>
+-                            <label for="run_opstop_toggle_cb"><h5>{{nls.OptionalStop}}:</h5></label>
+-                            <span id="run_opstop_toggle" class="switch" data-on="success" data-off="primary" data-bind="event: { 'switch-change': setOptionalStop }">
+-                            <input id="run_opstop_toggle_cb" type="checkbox"> </span>
+-                        </td>
+-
+-
++                    
++                        <td data-bind="text: cycleTimeText">CLOCK</td>
++                    
++                        
+ 
+                         <!-- <td>
+                             <label for="run_sstep_toggle_cb"><h5>{{nls.SingleStep}}:</h5></label>
+@@ -39,7 +34,7 @@
+                             </span>
+                         </td>-->
+ 
+-                        <td style="width:110px;">
++                        <td style="width:110px;" rowspan="2">
+                             <div class="sliders-vertical">
+                                 <span id="run_maxvel_slider" class="slider-primary" data-bind="css: {'slider-primary': true}"></span>
+                             </div>
+@@ -53,7 +48,7 @@
+                             </div>
+                         </td>
+ 
+-                        <td style="width:110px;">
++                        <td style="width:110px;" rowspan="2">
+                             <div class="sliders-vertical">
+                                 <span id="run_feed_rate_slider" class="slider-primary" data-bind="css: {'slider-primary': linuxCNCServer.vars.feedrate.data() <= 1, 'slider-warning': linuxCNCServer.vars.feedrate.data() > 1 }"></span>
+                             </div>
+@@ -67,7 +62,7 @@
+                             </div>
+                         </td>
+ 
+-                        <td style="width:110px;">
++                        <td style="width:110px;" rowspan="2">
+                             <div class="sliders-vertical">
+                                 <span id="run_spindle_rate_slider" class="slider-primary" data-bind="css: {'slider-primary': linuxCNCServer.vars.spindlerate.data() <= 1, 'slider-warning': linuxCNCServer.vars.spindlerate.data() > 1 }"></span>
+                             </div>
+@@ -83,6 +78,15 @@
+ 
+ 
+                     </tr>
++                    <tr>
++                    <!--Optional Stop-->
++                        <td>
++                            <label for="run_opstop_toggle_cb"><h5>{{nls.OptionalStop}}:</h5></label>
++                            <span id="run_opstop_toggle" class="switch" data-on="success" data-off="primary" data-bind="event: { 'switch-change': setOptionalStop }">
++                            <input id="run_opstop_toggle_cb" type="checkbox"> </span>
++                        </td>
++                    </tr>
++
+                  </table>
+             </div>
+         </div>
+diff --git a/app/modules/baseModule/tabs/tabWidgets/view_workOffsets.html b/app/modules/baseModule/tabs/tabWidgets/view_workOffsets.html
+index 928f63f..5cb388a 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/view_workOffsets.html
++++ b/app/modules/baseModule/tabs/tabWidgets/view_workOffsets.html
+@@ -57,7 +57,7 @@
+                             <span class="dropdown" >
+                                 <a class=" dropdown-toggle text-center act act-primary" id="woTLOTitleDrop" role="button" data-toggle="dropdown" href="#"><abbr class="text-center" title="{{nls.TLOFullName}}">{{nls.ToolLengthOffsetTitle}}</abbr>: <span data-bind="text: linuxCNCServer.vars.tool_in_spindle.data"></span></a>
+                                 <ul class="dropdown-menu text-left" role="menu" aria-labelledby="woTLOTitleDrop" >
+-                                    <li role="presentation"><a role="menuitem" tabindex="-1" data-bind="attr: {href: '#SelectToolModal' + nextUniqueElementID().toString()} " data-toggle="modal">{{nls.SetToolNumber}}</a></li>
++                                    <li role="presentation"><a role="menuitem" tabindex="-1" data-bind="attr: {href: '#SelectToolModal' + settings.globals.nextUniqueElementID.toString()}" data-toggle="modal">{{nls.SetToolNumber}}</a></li>
+                                 </ul>
+                             </span>
+                         </div>
+@@ -74,7 +74,7 @@
+                 </td>
+ 
+                 <td class="text-center" >
+-                    <strong class="text-center" data-bind="text: ($root.linuxCNCServer.FormatDisplayNumber($root.linuxCNCServer.RmtDRO()[$data])), attr:{id: (($data).toString()+'woax') } "></strong>
++                    <strong class="text-center" data-bind="text: ($root.linuxCNCServer.RmtDRO()[$data].toFixed($root.linuxCNCServer.DisplayPrecision())), attr:{id: (($data).toString()+'woax') } "></strong>
+                 </td>
+ 
+                 <td class="">
+@@ -82,7 +82,7 @@
+                 </td>
+ 
+                 <td class="text-center" >
+-                    <span class="text-center" data-bind="text: ( $root.linuxCNCServer.FormatDisplayNumber($root.linuxCNCServer.vars.actual_positionDisplay.data()[$data]) ) "></span>
++                    <span class="text-center" data-bind="text: ( $root.linuxCNCServer.vars.actual_positionDisplay.data()[$data].toFixed($root.linuxCNCServer.DisplayPrecision())) "></span>
+                 </td>
+ 
+                 <td class="">
+@@ -96,7 +96,7 @@
+                         <ul class="dropdown-menu text-left" role="menu" data-bind="attr:{'aria-labelledby':(($data).toString()+'woG5xDrop')}" >
+                             <li role="presentation" data-bind="if: ($data < 2)"><a role="menuitem" tabindex="-1" href="#" data-bind="click: function(d,event){ $root.linuxCNCServer.touchoffCurrentDisplay(d, $root.linuxCNCServer.MachineUnitsToDisplayUnitsLinear( -1*$root.settings.persist.ProbeRadius()) ); }"><i class="icon-step-forward" data-bind="css:{rotate_text_90: ($data==1)}"></i> {{nls.SetG5xToRadius}}</a></li>
+                             <li role="presentation"><a role="menuitem" tabindex="-1" href="#" data-bind="click: function(d){ $root.linuxCNCServer.touchoffCurrentDisplay(d,0);}">{{nls.ZeroG5x}}</a></li>
+-                            <li role="presentation"><a role="menuitem" tabindex="-1" data-bind="click: function(d){ $root.curIdx(d); $root.tempOffset($root.linuxCNCServer.RmtDRO()[d].toFixed($root.linuxCNCServer.DisplayPrecision())); }, attr: {href: '#SelectOffsetG5xModal' + $root.nextUniqueElementID().toString()}" data-toggle="modal" >{{nls.SetG5xToValue}}</a></li>
++                            <li role="presentation"><a role="menuitem" tabindex="-1" data-bind="click: function(d){ $root.curIdx(d); $root.tempOffset($root.linuxCNCServer.RmtDRO()[d].toFixed($root.linuxCNCServer.DisplayPrecision())); }, attr: {href: '#SelectOffsetG5xModal' + $root.settings.globals.nextUniqueElementID.toString()}" data-toggle="modal" >{{nls.SetG5xToValue}}</a></li>
+                             <li role="presentation" class="divider"></li>
+                             <li role="presentation"><a role="menuitem" tabindex="-1" href="#" data-bind="click: function(d){ $root.linuxCNCServer.touchoffCurrentDisplay(d, $root.linuxCNCServer.RmtDRO()[d] + $root.linuxCNCServer.vars.g5x_offsetDisplay.data()[d]);}">{{nls.ClearG5x}}</a></li>
+                         </ul>
+@@ -114,7 +114,7 @@
+                         <a class="btn span12 dropdown-toggle text-center" data-bind="text: ( $root.linuxCNCServer.vars.g92_offsetDisplay.data()[$data].toFixed($root.linuxCNCServer.DisplayPrecision())), attr:{id: (($data).toString()+'woTLOdrop') }" role="button" data-toggle="dropdown" href="#"></a>
+                         <ul class="dropdown-menu text-left" role="menu" data-bind="attr:{'aria-labelledby':(($data).toString()+'woTLOdrop')}" >
+                             <li role="presentation"><a role="menuitem" tabindex="-1" href="#" data-bind="click: function(d){ $root.linuxCNCServer.g92SetDisplay(d,0);}">{{nls.ZeroG92}}</a></li>
+-                            <li role="presentation"><a role="menuitem" tabindex="-1" data-bind="click: function(d){ $root.curIdx(d); $root.tempOffset($root.linuxCNCServer.RmtDRO()[d].toFixed($root.linuxCNCServer.DisplayPrecision())); }, attr: {href: '#SelectOffsetG92Modal' + $root.nextUniqueElementID().toString()}" data-toggle="modal" >{{nls.SetG92ToValue}}</a></li>
++                            <li role="presentation"><a role="menuitem" tabindex="-1" data-bind="click: function(d){ $root.curIdx(d); $root.tempOffset($root.linuxCNCServer.RmtDRO()[d].toFixed($root.linuxCNCServer.DisplayPrecision())); }, attr: {href: '#SelectOffsetG92Modal' + $root.settings.globals.nextUniqueElementID.toString()}" data-toggle="modal" >{{nls.SetG92ToValue}}</a></li>
+                             <li role="presentation" class="divider"></li>
+                             <li role="presentation"><a role="menuitem" tabindex="-1" href="#" data-bind="click: function(d){ $root.linuxCNCServer.g92SetDisplay(d, $root.linuxCNCServer.RmtDRO()[d] + $root.linuxCNCServer.vars.g92_offsetDisplay.data()[d]);}">{{nls.ClearG92}}</a></li>
+                         </ul>
+@@ -154,7 +154,7 @@
+ 
+ 
+ <!--TOOL NUMBER SELECT MODAL DIALOG-->
+-<div data-bind="attr: {id: 'SelectToolModal' + nextUniqueElementID().toString()}" class="modal hide " role="dialog" aria-hidden="true">
++<div data-bind="attr: {id: 'SelectToolModal' + settings.globals.nextUniqueElementID.toString()}" class="modal hide " role="dialog" aria-hidden="true">
+     <div class="modal-header">
+         <h3>{{nls.SelectToolDialogTitle}}</h3>
+     </div>
+@@ -163,20 +163,20 @@
+             <div class="control-group">
+                 <label class="control-label" for="inputToolSet">{{nls.SetToolLabel}}</label>
+                 <div class="controls">
+-                    <input type="text" id="inputToolSet" class="input" data-bind="value: tempToolNumber" autofocus="true">
++                    <input type="text" id="inputToolSet" class="input" data-bind="value: tempToolNumber">
+                 </div>
+             </div>
+         </form>
+     </div>
+     <div class="modal-footer">
+-        <button id="cancelSetTool" class="btn" data-dismiss="modal" aria-hidden="true">{{nls.DialogClose}}</button>
+-        <button id="saveSetTool" class="btn btn-primary" data-dismiss="modal" data-bind="click: function(){ linuxCNCServer.setToolNumber(tempToolNumber()); }">{{nls.Save}}</button>
++        <button class="btn" data-dismiss="modal" aria-hidden="true">{{nls.DialogClose}}</button>
++        <button class="btn btn-primary" data-dismiss="modal" data-bind="click: function(){ linuxCNCServer.setToolNumber(tempToolNumber()); }">{{nls.Save}}</button>
+     </div>
+ </div>
+ 
+ 
+ <!--OFFSET SET MODAL DIALOG -->
+-<div data-bind="attr: {id: 'SelectOffsetG92Modal' + nextUniqueElementID().toString()}" class="modal hide " role="dialog" aria-hidden="true" stye="z-index: 999999;">
++<div data-bind="attr: {id: 'SelectOffsetG92Modal' + settings.globals.nextUniqueElementID.toString()}" class="modal hide " role="dialog" aria-hidden="true" stye="z-index: 999999;">
+     <div class="modal-header">
+         <h3>{{nls.SetG92DialogTitle}}</h3>
+     </div>
+@@ -185,19 +185,19 @@
+             <div class="control-group">
+                 <label class="control-label" for="inputOffsetG92Set">{{nls.SetG92LabelTitle1}}<strong data-bind="text: linuxCNCServer.axisNames[curIdx()]"></strong>{{nls.SetG92LabelTitle2}}</label>
+                 <div class="controls">
+-                    <input type="text" id="inputOffsetG92Set" class="input" data-bind="value: tempOffset" autofocus="true">
++                    <input type="text" id="inputOffsetG92Set" class="input" data-bind="value: tempOffset">
+                 </div>
+             </div>
+         </form>
+     </div>
+     <div class="modal-footer">
+-        <button id="cancelSetG92" class="btn" data-dismiss="modal" aria-hidden="true">{{nls.DialogClose}}</button>
+-        <button id="saveSetG92" class="btn btn-primary" data-dismiss="modal" data-bind="click: function(){ linuxCNCServer.g92SetDisplay(curIdx(), tempOffset()); }">{{nls.Save}}</button>
++        <button class="btn" data-dismiss="modal" aria-hidden="true">{{nls.DialogClose}}</button>
++        <button class="btn btn-primary" data-dismiss="modal" data-bind="click: function(){ linuxCNCServer.g92SetDisplay(curIdx(), tempOffset()); }">{{nls.Save}}</button>
+     </div>
+ </div>
+ 
+ <!--OFFSET SET MODAL DIALOG -->
+-<div data-bind="attr: {id: 'SelectOffsetG5xModal' + nextUniqueElementID().toString()}" class="modal hide " role="dialog" aria-hidden="true">
++<div data-bind="attr: {id: 'SelectOffsetG5xModal' + settings.globals.nextUniqueElementID.toString()}" class="modal hide " role="dialog" aria-hidden="true">
+     <div class="modal-header">
+         <h3>{{nls.SetG5xDialogTitle}}<span data-bind="text: linuxCNCServer.RmtG5xString"></span></h3>
+     </div>
+@@ -206,13 +206,13 @@
+             <div class="control-group">
+                 <label class="control-label" for="inputOffsetG5xSet">{{nls.SetG5xLabelTitle1}}<strong data-bind="text: linuxCNCServer.axisNames[curIdx()]"></strong>{{nls.SetG5xLabelTitle2}}</label>
+                 <div class="controls">
+-                    <input type="text" id="inputOffsetG5xSet" class="input" data-bind="value: tempOffset" autofocus="true">
++                    <input type="text" id="inputOffsetG5xSet" class="input" data-bind="value: tempOffset">
+                 </div>
+             </div>
+         </form>
+     </div>
+     <div class="modal-footer">
+-        <button id="cancelSetG5x" class="btn" data-dismiss="modal" aria-hidden="true">{{nls.DialogClose}}</button>
+-        <button id="saveSetG5x" class="btn btn-primary" data-dismiss="modal" data-bind="click: function(){ console.log('clicked'); linuxCNCServer.touchoffCurrentDisplay(curIdx(), tempOffset()); console.log('click finished');}">{{nls.Save}}</button>
++        <button class="btn" data-dismiss="modal" aria-hidden="true">{{nls.DialogClose}}</button>
++        <button class="btn btn-primary" data-dismiss="modal" data-bind="click: function(){ linuxCNCServer.touchoffCurrentDisplay(curIdx(), tempOffset()); }">{{nls.Save}}</button>
+     </div>
+-</div>
++</div>
+\ No newline at end of file
+diff --git a/app/modules/baseModule/tabs/tabWidgets/viewmodel_dro.js b/app/modules/baseModule/tabs/tabWidgets/viewmodel_dro.js
+index 9e8ed1d..7b0c275 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/viewmodel_dro.js
++++ b/app/modules/baseModule/tabs/tabWidgets/viewmodel_dro.js
+@@ -49,25 +49,12 @@ define(function(require) {
+                 $(event.currentTarget).val( self.linuxCNCServer.RmtDRO()[index].toFixed(self.linuxCNCServer.DisplayPrecision()) );
+         }
+ 
+-        self.warmupNeeded = ko.computed(function() {
+-            return self.linuxCNCServer.vars['halpin_hss_warmup.warmup_needed'].data() == 'TRUE';
+-        });
+-
+-        self.spindleSpeed = ko.computed(
+-          function() {
+-            var spindleSpeedMeasured =  parseFloat(self.linuxCNCServer.vars['halpin_spindle_voltage.speed_measured'].data());
+-            var spindleSpeedCommanded = self.linuxCNCServer.vars.spindle_speed.data();
+-            var spindleSpeedMultiplier = self.linuxCNCServer.vars.spindlerate.data();
+-            var spindleOn = self.linuxCNCServer.vars.spindle_enabled.data();
+-
+-            if(spindleOn && spindleSpeedMeasured) {
+-                return Math.round(spindleSpeedMeasured);
+-            } else {
+-                return Math.round(spindleSpeedCommanded*spindleSpeedMultiplier);
+-            }
+-          }
+-        );
+-
++        self.formatDisplayValue = function(rawVal)
++        {
++            if(Math.abs(rawVal) < 0.00001)
++                return 0;
++             return rawVal;
++        }
+ 	};
+ 
+ 	return ViewModel;
+diff --git a/app/modules/baseModule/tabs/tabWidgets/viewmodel_file.js b/app/modules/baseModule/tabs/tabWidgets/viewmodel_file.js
+index 3e4add2..fe73143 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/viewmodel_file.js
++++ b/app/modules/baseModule/tabs/tabWidgets/viewmodel_file.js
+@@ -5,17 +5,12 @@ define(function(require) {
+ 
+ 	var ViewModel = function(moduleContext, privateContext) {
+ 
+-    	var self = this;
++		var self = this;
+         self.Panel = null;
+         self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
+         self.context = moduleContext;
+         self.privateContext = privateContext;
+ 
+-        self.request = null;
+-        self.fileContent = [];
+-        self.downloadProgress = ko.observable(0);
+-        self.progressDiv = ko.observable(false);
+-        
+         this.getTemplate = function()
+         {
+             return template;
+@@ -47,7 +42,6 @@ define(function(require) {
+                     data: data,
+                     stretchH: "last",
+                     rowHeaders: true,
+-                    colWidths: 900,
+                     height: 400,
+                     startCols: 1,
+                     outsideClickDeselects: false,
+@@ -83,13 +77,7 @@ define(function(require) {
+                 });
+ 
+                 // monitor file contents
+-                self.linuxCNCServer.vars.file.data.subscribe(
+-                    function(){ 
+-                        if(self.request)
+-                            self.request(); //cancels an existing request
+-                        self.request = self.requestFileContent();
+-                    }
+-                );
++                self.linuxCNCServer.vars.file_content.data.subscribe( self.updateData );
+                 self.linuxCNCServer.ui_motion_line.subscribe( function(newval){ self.motionLineUpdateInProgress=true; self.updateDisplayLine(newval); self.motionLineUpdateInProgress=false; });
+ 
+                 self.fileListTable.dblclick( function(){ self.setMotionLineToSelected(); } );
+@@ -110,84 +98,24 @@ define(function(require) {
+ 
+         }
+ 
+-        this.requestFileContent = function(){
+-            self.fileContent = [];
+-            self.renderTable();
+-            self.downloadProgress(0);
+-            self.progressDiv(true);
+-
+-            var idx = 0;
+-            var chunkSize = 100000;
+-            var isEnd = false;
+-            var id = Date.now();
+-            var fileSize = Number.MAX_VALUE; 
+-            
+-            var listener = function(e){
+-                var msg = JSON.parse(e.data);
+-                if((msg.id === id) && (msg.code === "?OK")){
+-                    if(msg.data.length === chunkSize){
+-                        idx += chunkSize;
+-                        self.downloadProgress((100 * idx / fileSize).toFixed(0));
+-                        self.linuxCNCServer.downloadChunkGCode(id, idx, chunkSize);
+-                    }
+-                    else {
+-                        self.progressDiv(false);
+-                        isEnd = true;
+-                        self.linuxCNCServer.socket.removeEventListener('message', listener);
+-                    }
+-                    self.updateData({ data: msg.data, id: id, isEnd: isEnd });
+-                }
+-            }
+-            self.linuxCNCServer.socket.addEventListener('message', listener);
+-            self.updateData({ data: "", id: id, isEnd: false, percent: 0 });
+-            self.linuxCNCServer.downloadChunkGCode(id, 0, chunkSize);
+-            
+-            var sizeListener = function(e){
+-                var msg = JSON.parse(e.data);
+-                if((msg.id === (id + 'size')) && (msg.code === "?OK")){
+-                    fileSize = parseInt(msg.data);
+-                    self.linuxCNCServer.socket.removeEventListener('message', sizeListener);
+-                }
+-            }
+-            self.linuxCNCServer.socket.addEventListener('message', sizeListener);
+-            self.linuxCNCServer.sendCommand(id + 'size', "program_get_size", []);
+-            
+-            var cancel = function() {
+-                self.linuxCNCServer.socket.removeEventListener('message', listener);
+-            }
+-            return cancel;
+-        }
+-
+         this.updateData = function( newfilecontent )
+         {
+-            var shouldRender = (self.fileContent.length == 0);
+-            
+-            var isData = (newfilecontent.data) && (newfilecontent.data.length > 0);
+-            if(isData){  
+-                var newarr = _.zip(newfilecontent.data.split('\n'));
+-                if(self.fileContent.length > 0)
+-                    self.fileContent[self.fileContent.length - 1] = [self.fileContent.pop()[0] + newarr.shift()[0]];
+-                
+-                var i;
+-                for(i = 0; i < newarr.length; i++){
+-                    self.fileContent.push(newarr[i]);
+-                }
+-            }
+-            
+             var ht = self.fileListTable.handsontable('getInstance');
+-            shouldRender = shouldRender || (ht.rowOffset() > (ht.countRows() - 100));
+-            shouldRender = shouldRender || newfilecontent.isEnd;
+-            if(shouldRender) 
+-                self.renderTable(ht);
+-        }
+ 
+-        this.renderTable = function(ht=null)
+-        {
+-            if(!ht)
+-                ht = self.fileListTable.handsontable('getInstance');
+-            ht.loadData(self.fileContent);
++            var dat = _.zip(newfilecontent.split('\n'));
++            ht.loadData(dat);
++
++            var rh = [];
++            var rc = ht.countRows();
++            for (idx = 0; idx < rc; idx++)
++                rh.push(idx.toString());
++            ht.updateSettings({rowHeaders: rh});
++
+             ht.render();
++
+             $("#jog_focus_handler").focus();
++
++
+         }
+ 
+         this.updateDisplayLine = function( lineNum )
+diff --git a/app/modules/baseModule/tabs/tabWidgets/viewmodel_fileOpen.js b/app/modules/baseModule/tabs/tabWidgets/viewmodel_fileOpen.js
+index f7a2eb6..2750024 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/viewmodel_fileOpen.js
++++ b/app/modules/baseModule/tabs/tabWidgets/viewmodel_fileOpen.js
+@@ -4,22 +4,11 @@ define(function(require) {
+     var nls = require('i18n!./nls/resources');
+     var utils = require('../../../../core/helpers/utility.js');
+ 
+-    var ViewModel = function(moduleContext) {
++	var ViewModel = function(moduleContext) {
+ 
+-	var self = this;
+-        
++		var self = this;
+         self.Panel = null;
+         self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
+-        
+-        self.reader = {};
+-        self.newFile = {};
+-        self.fileName = ko.observable("");
+-        self.chunkSize = 200000;
+-        self.overwrite = false;
+-        self.isCanceled = false;
+-        self.timer = {};
+-        self.isUploading = ko.observable(false);
+-        self.uploadPercent = ko.observable(0);
+ 
+         this.getTemplate = function()
+         {
+@@ -47,135 +36,21 @@ define(function(require) {
+ 
+         this.testFileSelect = function( evt )
+         {
+-            self.overwrite = false;
+-            self.isCanceled = false;
+-            self.isUploading(true);
+             var files = evt.target.files; // FileList object
+-            self.reader = new FileReader();
+-            self.newFile = files[0];
+-            self.fileName(self.newFile.name);
+-            self.upload();
+-            
+-            $('#file_input').val('');
+-            var hoverText = self.newFile.name + " " + self.humanizeFileSize(self.newFile.size);
+-            document.getElementById("upload").setAttribute("title", hoverText);
+-            self.updateProgress(0);
+-            self.toggleUploadDiv(true);
+-            self.timer = setInterval(function() { self.connectionCheck() }, 3000);
+-        }
+-        
+-        this.connectionCheck = function() {
+-            if( !self.linuxCNCServer.server_logged_in() ){
+-                $.pnotify({title: "Alert", text: 'Connection to server lost', type: "Alert"});
+-                self.cancelUpload();
+-            }
++            var reader = new FileReader();
++            var f = files[0];
++            reader.onload = (function(theFile) {
++                return function(e) {
++                    self.linuxCNCServer.uploadGCode(theFile.name, e.target.result );
++                    self.linuxCNCServer.requestFileContent();
++
++                    $('#file_input').val(""); // clear file_input so same file can be reuploaded.
++                };
++            })(f);
++            reader.readAsText(f);
+         }
+ 
+-        this.upload = function(startIdx=0)
+-        {
+-            var nextIdx = startIdx + self.chunkSize + 1;
+-            var blob = self.newFile.slice( startIdx, nextIdx );
+-
+-            self.reader.onload = function(e) {
+-                
+-                function listenMsg(event){
+-                    if(self.isCanceled){
+-                        self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
+-                        return;
+-                    }
+-
+-                    var msg = JSON.parse(event.data);
+-                    if(msg.id === "program_upload_chunk"){
+-                        self.isConnected = true;
+-                        if(msg.code === "?OK"){
+-                            
+-                            self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
+-                             
+-                            if(msg.data === "occupied"){
+-                                self.overwrite = true;
+-                                $('#fileOverwriteModal').modal('show'); 
+-                                return;
+-                            }
+-
+-                            self.updateProgress(nextIdx / self.newFile.size); 
+-                            if(nextIdx < self.newFile.size){
+-                                isLastChunk = (nextIdx + self.chunkSize) > self.newFile.size;
+-                                if( isLastChunk ){
+-                                    self.linuxCNCServer.setRmtMode(self.linuxCNCServer.TASK_MODE_MDI);
+-                                    self.linuxCNCServer.setRmtMode(self.linuxCNCServer.TASK_MODE_AUTO);
+-                                }
+-                                self.upload(nextIdx);
+-                            }
+-                            else{
+-                                var newStatus = '';
+-                                if(self.overwrite)
+-                                    newStatus = 'Succesfully overwrote file ' + self.newFile.name;
+-                                else
+-                                    newStatus = 'Succesfully uploaded ' + self.newFile.name;
+-                                $.pnotify({title: "Success", text: newStatus, type: "success"});
+-                                
+-                                setTimeout(function() { 
+-                                    self.toggleUploadDiv(false) 
+-                                }, 1000);
+-
+-                                clearInterval(self.timer);
+-                                //force a refresh of knockout observable in case the uploaded file has the same name as the one currently open
+-                                //filePanel.ViewModel.requestFileContent();
+-                                lcncsvr.vars.file.data.valueHasMutated();
+-                                self.isUploading(false);
+-                            }
+-                        }
+-                        else if(msg.code === "?Error executing command"){
+-                            var newStatus = 'Error uploading file ' + self.newFile.name;
+-                            $.pnotify({title: "Error", text: newStatus, type: "error"});
+-                            self.cancelUpload();
+-                            self.isCanceled = true;
+-                        }
+-                    }
+-                }
+-
+-                
+-                self.linuxCNCServer.socket.addEventListener('message', listenMsg);
+-                var start = (startIdx === 0);
+-                var end = (nextIdx > self.newFile.size);
+-                self.linuxCNCServer.uploadChunkGCode(self.newFile.name, e.target.result, start, end, self.overwrite);
+-            };
+-            
+-            self.reader.readAsText(blob);
+-        }
+-        
+-        this.toggleUploadDiv = function(isTurningOn){
+-            var e = document.getElementById("upload");
+-            if(e !== null){
+-                if(isTurningOn){
+-                    e.style.display = "flex";
+-                } else {
+-                    e.style.display = "none";
+-                }
+-            }
+-        }
+-       
+-        this.cancelUpload = function(){
+-            self.isCanceled = true;
+-            self.isUploading(false);
+-            var text = 'Canceled upload of ' + self.newFile.name;
+-            $.pnotify({title: "Upload canceled", text: text, type: "info"});
+-            clearInterval(self.timer);
+-            setTimeout(function() { 
+-                self.toggleUploadDiv(false) 
+-            }, 1000);
+-        }
+-
+-        this.humanizeFileSize = function(size) {
+-            var i = size == 0 ? 0 : Math.floor( Math.log(size) / Math.log(1000) );
+-            return ( size / Math.pow(1000, i) ).toFixed(2) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
+-        }
+-       
+-        this.updateProgress = function(proportion){
+-            self.uploadPercent(Math.min((proportion * 100).toFixed(1), 100) + '%');
+-        }
+-        
+-        this.initialize = function( Panel ) {
++		this.initialize = function( Panel ) {
+             if (self.Panel == null)
+             {
+                 self.Panel = Panel;
+@@ -183,7 +58,7 @@ define(function(require) {
+ 
+                 $('#file_input', self.Panel.getJQueryElement()).bind('change', self.testFileSelect );
+             }
+-	};
++		};
+ 
+ 
+ 
+diff --git a/app/modules/baseModule/tabs/tabWidgets/viewmodel_jog.js b/app/modules/baseModule/tabs/tabWidgets/viewmodel_jog.js
+index ca09fac..4820c9d 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/viewmodel_jog.js
++++ b/app/modules/baseModule/tabs/tabWidgets/viewmodel_jog.js
+@@ -6,7 +6,7 @@ define(function(require) {
+     var ViewModel = function(moduleContext) {
+         var self = this;
+         self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
+-        
++
+         self.mouseWheelOn = false;
+ 
+         self.mouseWheelBufferedEvents = 0;
+@@ -48,11 +48,7 @@ define(function(require) {
+             self.mouseWheelOn = !self.mouseWheelOn;
+         };
+ 
+-        self.linear_step_options = {        
+-            default: [0, .1, .01, .001, .0001],
+-            mm: [0,  1,  .1, .01,  .001]
+-        };
+-
++        self.linear_step_options     = [0, .1, .01, .001, .0001];
+         self.a_step_options = [0,  90, 5,   1,   .1,   .01];
+         self.b_step_options = [0,  360, 180, 90, 5,   1,   .1,   .01];
+         self.last_linear_step = 0;
+@@ -70,10 +66,7 @@ define(function(require) {
+             case 0:
+             case 1:
+             case 2:
+-             if(self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor() == 25.4)
+-                options = self.linear_step_options.mm;
+-              else
+-                options = self.linear_step_options.default;
++              options = self.linear_step_options;
+               break;
+             case 3:
+               options = self.a_step_options;
+@@ -96,10 +89,7 @@ define(function(require) {
+             case 0:
+             case 1:
+             case 2:
+-              if(self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor() == 25.4)
+-                options = self.linear_step_options.mm;
+-              else
+-                options = self.linear_step_options.default;
++              options = self.linear_step_options;
+               break;
+             case 3:
+               options = self.a_step_options;
+@@ -132,9 +122,8 @@ define(function(require) {
+                 self.last_b_step = s;
+             }
+ 
+-            var step_options = self.linear_step_options.default;
+-            if(self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor() == 25.4)
+-                step_options = self.linear_step_options.mm;
++
++            var step_options = self.linear_step_options;
+             if(axis == 3) {
+                 step_options = self.a_step_options;
+             } else if(axis == 4) {
+@@ -159,11 +148,7 @@ define(function(require) {
+             if(a > 2) { // if rotational
+                 return (s == 0 ? 'Continuous' : 'Step ' + s);
+             } else {
+-                if(s == 0)
+-                    return 'Continuous'
+-                else{
+-                    return ('Step ' + s);
+-                }
++                return (s == 0 ? 'Continuous' : 'Step ' + s*self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor());
+             }
+         };
+ 
+@@ -173,17 +158,7 @@ define(function(require) {
+             if(a > 2) { // if rotational
+                 return (s == 0 ? 'Continuous' : 'Step ' + s);
+             } else {
+-                if(self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor() == 25.4){
+-                    if(s == 0.0001){
+-                        s = 0.001;
+-                        self.selectStep(s);
+-                    }
+-                }
+-                else if(s == 1){   
+-                    s = 0.1;
+-                    self.selectStep(s);
+-                }
+-                return (s == 0 ? 'Continuous' : 'Step ' + s);
++                return (s == 0 ? 'Continuous' : 'Step ' + s*self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor());
+             }
+         });
+ 
+@@ -193,26 +168,20 @@ define(function(require) {
+                 return self.a_step_options;
+             } else if(a == 4) {
+                 return self.b_step_options;
+-            } else if(self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor() == 25.4)
+-                return self.linear_step_options.mm;
+-              else
+-                return self.linear_step_options.default;
++            }
++            return self.linear_step_options;
+         });
+ 
+         self.minus_pressed = function(data, event) {
+             self.minus_key_down = true;
+             var multiplier = 1;
+-            var incr = self.step();
+             if(self.selected_axis() > 2) {
+                 multiplier = 180;
+             }
+-            else{
+-                incr = - self.incr()
+-            }
+             if(self.step() == 0) {
+                 self.linuxCNCServer.jogCont(self.selected_axis(), -multiplier*self.linuxCNCServer.jog_speed_fast());
+             } else {
+-                self.linuxCNCServer.jogIncr(self.selected_axis(), incr);
++                self.linuxCNCServer.jogIncr(self.selected_axis(), -self.step());
+             }
+             event.preventDefault();
+         };
+@@ -226,25 +195,17 @@ define(function(require) {
+         self.plus_pressed = function(data, event) {
+             self.plus_key_down = true;
+             var multiplier = 1;
+-            var incr = self.step();
+             if(self.selected_axis() > 2) {
+                 multiplier = 180;
+             }
+-            else{
+-                incr = self.incr();
+-            }
+             if(self.step() == 0) {
+                 self.linuxCNCServer.jogCont(self.selected_axis(), multiplier*self.linuxCNCServer.jog_speed_fast());
+             } else {
+-                self.linuxCNCServer.jogIncr(self.selected_axis(), incr);
++                self.linuxCNCServer.jogIncr(self.selected_axis(), self.step());
+             }
+             event.preventDefault();
+         };
+ 
+-        self.incr = function(){
+-            return (self.step() / self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor());
+-        }
+-
+         self.plus_released = function(data, event) {
+             if(self.step() == 0) {
+                 self.linuxCNCServer.jogStop(self.selected_axis());
+diff --git a/app/modules/baseModule/tabs/tabWidgets/viewmodel_run.js b/app/modules/baseModule/tabs/tabWidgets/viewmodel_run.js
+index f2cb693..5fb78dd 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/viewmodel_run.js
++++ b/app/modules/baseModule/tabs/tabWidgets/viewmodel_run.js
+@@ -61,6 +61,10 @@ define(function(require) {
+         };
+ 
+         self.singleStep = ko.observable(false);
++        
++        self.cycleTimeText = ko.computed( function() {
++            return (self.linuxCNCServer.vars.cycleTime.data() );
++        });
+ 
+         self.spindleRateText = ko.computed( function() {
+             return (self.linuxCNCServer.vars.spindlerate.data() * 100).toFixed(0);
+diff --git a/app/modules/baseModule/tabs/tabWidgets/viewmodel_workOffsets.js b/app/modules/baseModule/tabs/tabWidgets/viewmodel_workOffsets.js
+index 87b5a71..034a487 100644
+--- a/app/modules/baseModule/tabs/tabWidgets/viewmodel_workOffsets.js
++++ b/app/modules/baseModule/tabs/tabWidgets/viewmodel_workOffsets.js
+@@ -10,10 +10,6 @@ define(function(require) {
+         self.Panel = null;
+         self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
+         self.settings = moduleContext.getSettings();
+-        
+-        // we use unique IDs in the view, so increment the counter so the next instance of t his view model will get a new ID
+-        // The modal dialogs need unique IDs globally, so each instance of this view must have different IDs for the modals
+-        self.nextUniqueElementID = ko.observable(Date.now());
+ 
+         this.getTemplate = function()
+         {
+@@ -24,41 +20,17 @@ define(function(require) {
+             return nls;
+         }
+ 
+-
+-        this.initialize = function( Panel ) {
++		this.initialize = function( Panel ) {
+             if (self.Panel == null)
+             {
+                 self.Panel = Panel;
++
++                // we use unique IDs in the view, so increment the counter so the next instance of t his view model will get a new ID
++                // The modal dialogs need unique IDs globally, so each instance of this view must have different IDs for the modals
++                self.settings.globals.nextUniqueElementID = self.settings.globals.nextUniqueElementID + 1;
+             }
+-            
+-            $(document).keydown(function(e){
+-                if(e.keyCode == 13 || e.keyCode == 27){
+-                    var modalStr = "";
+-                    if($("#SelectToolModal" + self.nextUniqueElementID()).hasClass("in")){
+-                        modalStr = "SetTool";
+-                        self.tempToolNumber($("#inputToolSet").val());
+-                    }
+-                    else if($("#SelectOffsetG5xModal" + self.nextUniqueElementID()).hasClass("in")){
+-                        modalStr = "SetG5x"
+-                        self.tempOffset($("#inputOffsetG5xSet").val());
+-                    }
+-                    else if($("#SelectOffsetG92Modal" + self.nextUniqueElementID()).hasClass("in")){
+-                        modalStr = "SetG92"
+-                        self.tempOffset($("#inputOffsetG92Set").val());
+-                    }
+-                    
+-                    if(modalStr !== ""){
+-                        e.preventDefault();
+-                        if(e.keyCode == 13){
+-                            $("#save" + modalStr).click();
+-                        }
+-                        else{
+-                            $("#cancel" + modalStr).click();
+-                        }
+-                    }
+-                }
+-            });
+-	};
++
++		};
+ 
+ 
+         self.tempToolNumber = ko.observable(self.linuxCNCServer.vars.tool_in_spindle.data());
+diff --git a/app/settings.js b/app/settings.js
+index 8a9a461..caad8f9 100644
+--- a/app/settings.js
++++ b/app/settings.js
+@@ -13,7 +13,10 @@ define(['./linuxCNCInterface.js', './core/helpers/utility.js'], function(linuxcn
+ 
+ 	settings.appName =  "PocketNC";
+     settings.linuxCNCServer = linuxcnc;
+-    
++    settings.globals = {
++        nextUniqueElementID : 0
++    };
++
+     // *** PERSISTENT SETTINGS ***
+     // Settings that are stored on the remote server
+     settings.persist = {}
+diff --git a/css/custom.css b/css/custom.css
+index 1d80cc0..4df7015 100644
+--- a/css/custom.css
++++ b/css/custom.css
+@@ -499,9 +499,6 @@ body {
+ .FileListTable .htCore .current {
+   background-color: lightcyan;
+ }
+-.FileListTable .htCore col.rowHeader {
+-  width: 70px;
+-}
+ .table-condensed-no-border th,
+ .table-condensed-no-border td {
+   padding: 4px 5px;

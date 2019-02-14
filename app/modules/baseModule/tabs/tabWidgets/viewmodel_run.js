@@ -61,6 +61,10 @@ define(function(require) {
         };
 
         self.singleStep = ko.observable(false);
+        
+        self.cycleTimeText = ko.computed( function() {
+            return (self.linuxCNCServer.vars.cycleTime.data() );
+        });
 
         self.spindleRateText = ko.computed( function() {
             return (self.linuxCNCServer.vars.spindlerate.data() * 100).toFixed(0);

@@ -225,8 +225,15 @@ define(function (require) {
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
     
-    lcncsvr.vars.run_time = { data: ko.observable(0), watched: false }
-
+    lcncsvr.vars.cycleSeconds = { data: ko.observable(0), watched: true };
+    lcncsvr.vars.cycleSeconds.data.subscribe(function (newval) {
+        console.log('GOT CYCLE TIME');
+    });
+   
+    lcncsvr.vars.cycleTime = { data: ko.observable(0), watched: true };
+    lcncsvr.vars.cycleTime.data.subscribe(function (newval) {
+        console.log('GOT CYCLE TIME');
+    });
     lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
                                                // we'll use ui_motion_line in all the component that would otherwise use motion_line and 
                                                // populate it ourselves with the best value
