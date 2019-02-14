@@ -6,7 +6,7 @@ define(function(require) {
     var ViewModel = function(moduleContext) {
         var self = this;
         self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
-
+        
         self.mouseWheelOn = false;
 
         self.mouseWheelBufferedEvents = 0;
@@ -48,7 +48,11 @@ define(function(require) {
             self.mouseWheelOn = !self.mouseWheelOn;
         };
 
-        self.linear_step_options     = [0, .1, .01, .001, .0001];
+        self.linear_step_options = {        
+            default: [0, .1, .01, .001, .0001],
+            mm: [0,  1,  .1, .01,  .001]
+        };
+
         self.a_step_options = [0,  90, 5,   1,   .1,   .01];
         self.b_step_options = [0,  360, 180, 90, 5,   1,   .1,   .01];
         self.last_linear_step = 0;
@@ -66,7 +70,10 @@ define(function(require) {
             case 0:
             case 1:
             case 2:
-              options = self.linear_step_options;
+             if(self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor() == 25.4)
+                options = self.linear_step_options.mm;
+              else
+                options = self.linear_step_options.default;
               break;
             case 3:
               options = self.a_step_options;
@@ -89,7 +96,10 @@ define(function(require) {
             case 0:
             case 1:
             case 2:
-              options = self.linear_step_options;
+              if(self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor() == 25.4)
+                options = self.linear_step_options.mm;
+              else
+                options = self.linear_step_options.default;
               break;
             case 3:
               options = self.a_step_options;
@@ -122,8 +132,9 @@ define(function(require) {
                 self.last_b_step = s;
             }
 
-
-            var step_options = self.linear_step_options;
+            var step_options = self.linear_step_options.default;
+            if(self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor() == 25.4)
+                step_options = self.linear_step_options.mm;
             if(axis == 3) {
                 step_options = self.a_step_options;
             } else if(axis == 4) {
@@ -148,7 +159,11 @@ define(function(require) {
             if(a > 2) { // if rotational
                 return (s == 0 ? 'Continuous' : 'Step ' + s);
             } else {
-                return (s == 0 ? 'Continuous' : 'Step ' + s*self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor());
+                if(s == 0)
+                    return 'Continuous'
+                else{
+                    return ('Step ' + s);
+                }
             }
         };
 
@@ -158,7 +173,17 @@ define(function(require) {
             if(a > 2) { // if rotational
                 return (s == 0 ? 'Continuous' : 'Step ' + s);
             } else {
-                return (s == 0 ? 'Continuous' : 'Step ' + s*self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor());
+                if(self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor() == 25.4){
+                    if(s == 0.0001){
+                        s = 0.001;
+                        self.selectStep(s);
+                    }
+                }
+                else if(s == 1){   
+                    s = 0.1;
+                    self.selectStep(s);
+                }
+                return (s == 0 ? 'Continuous' : 'Step ' + s);
             }
         });
 
@@ -168,20 +193,26 @@ define(function(require) {
                 return self.a_step_options;
             } else if(a == 4) {
                 return self.b_step_options;
-            }
-            return self.linear_step_options;
+            } else if(self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor() == 25.4)
+                return self.linear_step_options.mm;
+              else
+                return self.linear_step_options.default;
         });
 
         self.minus_pressed = function(data, event) {
             self.minus_key_down = true;
             var multiplier = 1;
+            var incr = self.step();
             if(self.selected_axis() > 2) {
                 multiplier = 180;
+            }
+            else{
+                incr = - self.incr()
             }
             if(self.step() == 0) {
                 self.linuxCNCServer.jogCont(self.selected_axis(), -multiplier*self.linuxCNCServer.jog_speed_fast());
             } else {
-                self.linuxCNCServer.jogIncr(self.selected_axis(), -self.step());
+                self.linuxCNCServer.jogIncr(self.selected_axis(), incr);
             }
             event.preventDefault();
         };
@@ -195,16 +226,24 @@ define(function(require) {
         self.plus_pressed = function(data, event) {
             self.plus_key_down = true;
             var multiplier = 1;
+            var incr = self.step();
             if(self.selected_axis() > 2) {
                 multiplier = 180;
+            }
+            else{
+                incr = self.incr();
             }
             if(self.step() == 0) {
                 self.linuxCNCServer.jogCont(self.selected_axis(), multiplier*self.linuxCNCServer.jog_speed_fast());
             } else {
-                self.linuxCNCServer.jogIncr(self.selected_axis(), self.step());
+                self.linuxCNCServer.jogIncr(self.selected_axis(), incr);
             }
             event.preventDefault();
         };
+
+        self.incr = function(){
+            return (self.step() / self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor());
+        }
 
         self.plus_released = function(data, event) {
             if(self.step() == 0) {

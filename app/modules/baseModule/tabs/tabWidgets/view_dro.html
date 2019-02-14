@@ -16,9 +16,9 @@
                                $root.onDROValChange(data,event,$data)}, blur:
                                function(data,event){
                                    $root.onDROValChange(data,event,$data) } },
-                                   value: ($root.formatDisplayValue(
-                                   $root.linuxCNCServer.RmtDRO()[$data]).toFixed($root.linuxCNCServer.DisplayPrecision())
-                                   ), attr:{id: (($data).toString()+'droax') }
+                                   value: ($root.linuxCNCServer.FormatDisplayNumber(
+                                   $root.linuxCNCServer.RmtDRO()[$data])),
+                                   attr:{id: (($data).toString()+'droax') }
                                    ">
                 </td>
 
@@ -43,10 +43,31 @@
 
         </tbody>
     </table>
+    <table class="table table-condensed-no-border">
+        <tbody>
+            <tr class="borderless-table">
+                <td class="width-axis-label ">
+                    <label for="spindle_speed" 
+                           class="label big-label span12 label-info" style="text-align: center;">S:</label>
+                </td>
 
-    <div class="btn-toolbar">
-        <button id="spindleRateBut" class="btn width-button-larger" style="text-align: center; " ><span data-bind="text: linuxCNCServer.vars.spindle_speed.data"></span> RPM</button>
-        <button class="btn xbtn-primary" data-bind="click: linuxCNCServer.homeAll">{{nls.HomeAll}}</button>
-    </div>
+                <td class="">
+                    <input id="spindle_speed" data-bind="value: spindleSpeed" type="text" class="input span12" style="width: 80px;text-align: left; font-weight:bold; float: left"/>
+                    <button class="btn xbtn-primary" style="margin-left: 5px" data-bind="enable: linuxCNCServer.AllHomed(), visible: linuxCNCServer.featuresMap().HIGH_SPEED_SPINDLE, click: linuxCNCServer.warmUpSpindle">
+                        <span data-bind="visible: warmupNeeded" title="Warm up required. E-Stop will be issued if spindle is commanded to turn on."><i class="icon-warning-sign"></i></span>
+                        {{nls.SpindleWarmup}}
+                    </button>
+                </td>
+
+<!--                <td class="width-button">
+                </td>-->
+
+                <td class="width-button">
+                    <button class="width-button btn xbtn-primary" data-bind="click: linuxCNCServer.homeAll">{{nls.HomeAll}}</button>
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
 
 </div>

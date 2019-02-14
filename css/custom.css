@@ -499,6 +499,9 @@ body {
 .FileListTable .htCore .current {
   background-color: lightcyan;
 }
+.FileListTable .htCore col.rowHeader {
+  width: 70px;
+}
 .table-condensed-no-border th,
 .table-condensed-no-border td {
   padding: 4px 5px;

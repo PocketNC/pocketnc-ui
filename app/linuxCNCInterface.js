@@ -44,17 +44,34 @@ define(function (require) {
     lcncsvr.server_open = ko.observable(false);
     lcncsvr.server_logged_in = ko.observable(false);
     lcncsvr.serverReconnectCheckInterval = 2000;
-    lcncsvr.serverReconnectHBTimeoutInterval = 30000;
+    lcncsvr.serverReconnectHBTimeoutInterval = 5000;
 
     lcncsvr.jog_step = ko.observable(0.001);
     lcncsvr.jog_speed_fast = ko.observable(1);
     lcncsvr.jog_speed_slow = ko.observable(1);
+
+    lcncsvr.features = ko.observableArray([]);
+    lcncsvr.featuresMap = ko.computed(function() {
+      var features = lcncsvr.features();
+      var map = {};
+      features.forEach(function(feature) {
+        map[feature] = true;
+      });
+
+      return map;
+    });
+
+    lcncsvr.featuresMap.subscribe(function(newval) {
+      lcncsvr.sendAllWatchRequests(true);
+    });
 
     lcncsvr.vars = {};
     lcncsvr.vars.client_config = { data: ko.observable({invalid:true}), watched: true, convert_to_json: true };
     lcncsvr.vars.linear_units = { data: ko.observable(1), watched: true };
     lcncsvr.vars.program_units = { data: ko.observable(0), watched: true };
     lcncsvr.vars["halpin_halui.max-velocity.value"] = { data: ko.observable("1"), watched: true };
+    lcncsvr.vars["halpin_spindle_voltage.speed_measured"] = { data: ko.observable("1"), watched: true };
+    lcncsvr.vars["halpin_hss_warmup.warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
 
     lcncsvr.isClientConfigValid = function()
     {
@@ -179,6 +196,16 @@ define(function (require) {
         } catch(ex) {}
     }
 
+    // Function to format position values for display and avoid flickering negative sign on near-zero values
+
+    lcncsvr.FormatDisplayNumber = function(rawVal)
+    {
+        minAbsVal = Math.pow(0.1, lcncsvr.DisplayPrecision());
+        if(Math.abs(rawVal) < minAbsVal){
+            rawVal = 0;
+        }
+        return rawVal.toFixed(lcncsvr.DisplayPrecision());
+    }
 
     // ***************
     // ***************
@@ -194,6 +221,14 @@ define(function (require) {
     lcncsvr.vars.g5x_offsetDisplay = { data: ko.computed(function(){ return lcncsvr.MachineUnitsToDisplayUnitsLinearPos(lcncsvr.vars.g5x_offset.data()) }), watched: false, local:true };
 
     lcncsvr.vars.g5x_index = { data: ko.observable(1), watched: true };
+    
+    //Clamp g5x_index because LinuxCNC improperly sets it to 0 on startup
+    lcncsvr.vars.g5x_index.data.subscribe( function(newval) {
+        if(newval < 1)
+            lcnc.vars.g5x_index(1);
+        else if (newval > 9)
+            lcnc.vars.g5x_index(9);
+    });
 
     lcncsvr.vars.g92_offset = { data: ko.observableArray([0, 0, 0, 0, 0, 0, 0, 0, 0]), watched: true };
     lcncsvr.vars.g92_offsetDisplay = { data: ko.computed(function(){ return lcncsvr.MachineUnitsToDisplayUnitsLinearPos(lcncsvr.vars.g92_offset.data()) }), watched: false, local:true };
@@ -209,6 +244,7 @@ define(function (require) {
     lcncsvr.vars.paused = { data: ko.observable(false), watched: true };
     lcncsvr.vars.mist =  { data: ko.observable(false), watched: true };
     lcncsvr.vars.flood =  { data: ko.observable(false), watched: true };
+    lcncsvr.vars.spindle_enabled = { data: ko.observable(false), watched: true };
     lcncsvr.vars.spindle_brake = { data: ko.observable(false), watched: true };
     lcncsvr.vars.spindle_speed = { data: ko.observable(0), watched: true };
     lcncsvr.vars.tool_in_spindle = { data: ko.observable(0), watched: true };
@@ -242,9 +278,10 @@ define(function (require) {
             lcncsvr.ui_motion_line(newval[0]);
         }
     });
-    lcncsvr.vars.motion_line.data.subscribe(function (newval) {
-        if(lcncsvr.vars.interp_state.data() == 1) {
-            lcncsvr.ui_motion_line(newval);
+    lcncsvr.vars.interp_state.data.subscribe(function (newval) {
+        if(newval == lcncsvr.TASK_INTERP_IDLE){
+            lcncsvr.vars.motion_line.data(0);
+            lcncsvr.ui_motion_line(0);
         }
     });
 
@@ -253,20 +290,30 @@ define(function (require) {
     lcncsvr.vars.axis_mask = { data: ko.observable(0), watched: true };
     lcncsvr.vars.backplot_async = { data: ko.observable(""), watched: false, convert_to_json: true, local:true };
     lcncsvr.vars.file.data.subscribe( function(newval){ lcncsvr.socket.send(JSON.stringify({"id": "backplot_async", "command": "get", "name": "backplot_async"})); });
-    lcncsvr.vars.file_content = { data: ko.observable(""), watched: false, local:true };
-    lcncsvr.vars.file.data.subscribe( function(newval){ if(newval) lcncsvr.requestFileContent() });
+    lcncsvr.vars.file_content = { data: ko.observableArray([]), watched: false, local:true };
 
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
     lcncsvr.vars.board_revision = { data: ko.observable(""), watched: false };
+    lcncsvr.vars.dogtag = { data: ko.observable(""), watched: false };
     lcncsvr.vars.system_status = { data: ko.observable(""), watched: false };
 
     lcncsvr.filteredVersions = ko.computed(function() {
         var versions = lcncsvr.vars.versions.data();
         var boardRev = lcncsvr.vars.board_revision.data();
+        var dogtag = lcncsvr.vars.dogtag.data();
 
         if(boardRev != "v2revP") {
             var index = versions.indexOf("v3.0.0");
+            if(index > -1) {
+                versions = versions.slice(index);
+            } else {
+                versions = [];
+            }
+        }
+
+        if(dogtag != "BeagleBoard.org Debian Image 2015-02-01") {
+            var index = versions.indexOf("v4.0.0");
             if(index > -1) {
                 versions = versions.slice(index);
             } else {
@@ -287,7 +334,6 @@ define(function (require) {
             console.log("SERVER_LOGGED_IN: " + newval);
             lcncsvr.vars.file.data("");
             lcncsvr.vars.backplot_async.data("");
-            lcncsvr.vars.file_content.data("");
         }
     });
 
@@ -531,7 +577,7 @@ define(function (require) {
     {
         if ( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO))
             return;
-        
+
         lcncsvr.sendCommand("auto","auto",["AUTO_RUN",lineNum.toString()])
     }
 
@@ -584,22 +630,41 @@ define(function (require) {
     lcncsvr.stop = function()
     {
         lcncsvr.abort();
-        lcncsvr.sendCommand("wait_complete","wait_complete",["1"]);
         return;
     }
-
-    lcncsvr.mdi = function( cmd )
+    
+    lcncsvr.mdi = function( cmd, id )
     {
         if ($.isEmptyObject(cmd)) {
-            return;
+            return false;
         }
-        if (!lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI)) {
-            return;
+        id = id || "mdi";
+
+        var errorText = "MDI command cannot be executed, ";
+        var isError = false;
+        if( lcncsvr.vars.task_state.data() !== lcncsvr.STATE_ON ){
+            errorText += "machine must be out of E-stop and turned on";
+            isError = true;
         }
-        if (!lcncsvr.RmtManualInputAllowed()) {
-            return;
+        else if( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI) ) {
+            errorText += "unable to set mode to MDI";
+            isError = true;
         }
-        return lcncsvr.sendCommand("mdi","mdi",[cmd]);
+        else if( ( lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_IDLE ) && lcncsvr.vars.queue_full.data() ){
+            errorText += "interpreter not idle and trajectory planner queue is full"
+            isError = true;
+        }
+        if(isError){
+            $.pnotify({
+                type: "error",
+                title: "Alert",
+                text: errorText
+            });
+            return false;
+        }
+
+        lcncsvr.sendCommand(id,"mdi",[cmd]);
+        return true;
     }
 
     lcncsvr.prepare_for_mdi = function()
@@ -743,9 +808,9 @@ define(function (require) {
 
     lcncsvr.setG5x = function( index )
     {
-        if (index < 0 || index >= 9)
+        if (index <= 0 || index > 9)
             return;
-
+        
         if (index <= 6)
             lcncsvr.mdi("G5" + (index + 3));
         else
@@ -809,9 +874,6 @@ define(function (require) {
 
     lcncsvr.jogIncr = function( axisNumber, dist )
     {
-        try {
-            dist = dist.toFixed(5);
-        } catch(ex){}
         try {
             lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MANUAL);
             lcncsvr.sendCommand( "JOG", "jog", ["JOG_INCREMENT", axisNumber, lcncsvr.jog_speed_fast(), dist ])
@@ -958,7 +1020,7 @@ define(function (require) {
     {
         if (_.isNumber(zOffset))
             zOffset = zOffset.toFixed(6);
-
+ 
         lcncsvr.mdi( "G10 L10 P" + lcncsvr.vars.tool_in_spindle.data() + " Z" + zOffset );
         lcncsvr.mdi( "G43" );
     }
@@ -1014,6 +1076,14 @@ define(function (require) {
         lcncsvr.refreshSystemStatus();
     }
 
+    lcncsvr.warmUpSpindle = function() {
+        lcncsvr.mdi("M670");
+    }
+
+    lcncsvr.getFeatures = function() {
+        lcncsvr.socket.send(JSON.stringify({"id": "get_features", "command": "get", "name": "config_item", "section": "POCKETNC_FEATURES", "parameter": "" }));
+    }
+
     lcncsvr.getINIConfigParameter = function(section, parameter) {
         lcncsvr.socket.send(JSON.stringify({"id": "ini_config_parameter", "command": "get", "name": "config_item", "section": section, "parameter": parameter }));
     }
@@ -1049,21 +1119,28 @@ define(function (require) {
         lcncsvr.sendCommand("program_delete","program_delete",[filename]);
     }
 
-    lcncsvr.requestFileContent = function() {
-        lcncsvr.socket.send(JSON.stringify({"id": "file_content", "command": "get", "name": "file_content"}));
-    }
-
     lcncsvr.uploadGCode = function(filename, data) {
-        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
-        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
         lcncsvr.sendCommand("program_upload","program_upload",[filename, data]);
     }
 
-    lcncsvr.sendAllWatchRequests = function () {
+    lcncsvr.uploadChunkGCode = function(filename, data, start, end, ovw) {
+        lcncsvr.sendCommand("program_upload_chunk","program_upload_chunk",[filename, data, start, end, ovw]);
+    }
+
+    lcncsvr.downloadChunkGCode = function(requestId, fileIdx, chunkSize) {
+        lcncsvr.sendCommand(requestId, "program_download_chunk",[fileIdx, chunkSize]);
+    }
+    
+    lcncsvr.sendAllWatchRequests = function (doRequiresFeature) {
         try {
             var id;
             var delayval = 0;
             $.each(lcncsvr.vars, function (key, val) {
+                // this will be called once immediately after opening the web socket
+                // and once again after we know what features the machine has
+                if((doRequiresFeature && val.requiresFeature && lcncsvr.featuresMap()[val.requiresFeature]) ||
+                   (!doRequiresFeature && !val.requiresFeature)) {
+
                 if (val.watched) {
                     //console.debug("WEBSOCKET: send watch request for " + key);
                     if (key == "actual_position")
@@ -1111,7 +1188,9 @@ define(function (require) {
                 }
                     } catch(ex) {}
                 }
+              }
             });
+
         } catch (ex) {
         }
     }
@@ -1157,8 +1236,10 @@ define(function (require) {
             */
 
             lcncsvr.socket.onopen = function () {
-                lcncsvr.socket.send(JSON.stringify({"id": "LOGIN", "user": lcncsvr.server_username(), "password": lcncsvr.server_password()}));
+                lcncsvr.socket.send(JSON.stringify({"id": "LOGIN", "user": lcncsvr.server_username(), "password": lcncsvr.server_password(), date: new Date().toISOString() }));
                 lcncsvr.server_open(true);
+
+                lcncsvr.getFeatures();
                 lcncsvr.sendAllWatchRequests();
             }
 
@@ -1169,6 +1250,19 @@ define(function (require) {
                     if (data.code != "?OK") {
                         console.debug("WEBSOCKET: ERROR code returned " + msg.data);
                         return;
+                    }
+
+                    if(data.id == "get_features") {
+                      var params = [];
+                      data.data.parameters.forEach(function(param) {
+                        var name = param.values.name;
+                        var value = param.values.value;
+
+                        if(value === "1") {
+                          params.push(name);
+                        }
+                      });
+                      lcncsvr.features(params);
                     }
 
                     if(data.id == "HB" && lcncsvr.refreshOnNextHB) {

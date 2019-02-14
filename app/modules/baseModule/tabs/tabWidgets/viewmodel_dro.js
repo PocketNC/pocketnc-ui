@@ -49,12 +49,25 @@ define(function(require) {
                 $(event.currentTarget).val( self.linuxCNCServer.RmtDRO()[index].toFixed(self.linuxCNCServer.DisplayPrecision()) );
         }
 
-        self.formatDisplayValue = function(rawVal)
-        {
-            if(Math.abs(rawVal) < 0.00001)
-                return 0;
-             return rawVal;
-        }
+        self.warmupNeeded = ko.computed(function() {
+            return self.linuxCNCServer.vars['halpin_hss_warmup.warmup_needed'].data() == 'TRUE';
+        });
+
+        self.spindleSpeed = ko.computed(
+          function() {
+            var spindleSpeedMeasured =  parseFloat(self.linuxCNCServer.vars['halpin_spindle_voltage.speed_measured'].data());
+            var spindleSpeedCommanded = self.linuxCNCServer.vars.spindle_speed.data();
+            var spindleSpeedMultiplier = self.linuxCNCServer.vars.spindlerate.data();
+            var spindleOn = self.linuxCNCServer.vars.spindle_enabled.data();
+
+            if(spindleOn && spindleSpeedMeasured) {
+                return Math.round(spindleSpeedMeasured);
+            } else {
+                return Math.round(spindleSpeedCommanded*spindleSpeedMultiplier);
+            }
+          }
+        );
+
 	};
 
 	return ViewModel;

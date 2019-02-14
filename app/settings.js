@@ -13,10 +13,7 @@ define(['./linuxCNCInterface.js', './core/helpers/utility.js'], function(linuxcn
 
 	settings.appName =  "PocketNC";
     settings.linuxCNCServer = linuxcnc;
-    settings.globals = {
-        nextUniqueElementID : 0
-    };
-
+    
     // *** PERSISTENT SETTINGS ***
     // Settings that are stored on the remote server
     settings.persist = {}
