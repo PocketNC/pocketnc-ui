@@ -41,6 +41,7 @@ define({
         "Resume": "Resume",
         "Step": "Step",
         "Stop": "Stop",
+        "RunTimeClock": "Run Time",
         "OptionalStop": "Optional Stop",
         "SingleStep": "Single Step",
         "MaxVelLine1" : "Max",

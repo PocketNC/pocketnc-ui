@@ -261,15 +261,8 @@ define(function (require) {
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
     
-    lcncsvr.vars.cycleSeconds = { data: ko.observable(0), watched: true };
-    lcncsvr.vars.cycleSeconds.data.subscribe(function (newval) {
-        console.log('GOT CYCLE TIME');
-    });
-   
-    lcncsvr.vars.cycleTime = { data: ko.observable(0), watched: true };
-    lcncsvr.vars.cycleTime.data.subscribe(function (newval) {
-        console.log('GOT CYCLE TIME');
-    });
+    lcncsvr.vars["halpin_run_time_clock.seconds"] = { data: ko.observable(0), watched: true };
+    
     lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
                                                // we'll use ui_motion_line in all the component that would otherwise use motion_line and 
                                                // populate it ourselves with the best value
@@ -297,7 +290,7 @@ define(function (require) {
     lcncsvr.vars.board_revision = { data: ko.observable(""), watched: false };
     lcncsvr.vars.dogtag = { data: ko.observable(""), watched: false };
     lcncsvr.vars.system_status = { data: ko.observable(""), watched: false };
-
+    
     lcncsvr.filteredVersions = ko.computed(function() {
         var versions = lcncsvr.vars.versions.data();
         var boardRev = lcncsvr.vars.board_revision.data();
@@ -1301,7 +1294,6 @@ define(function (require) {
 			window.location.reload(true);
                     }
                     if (lcncsvr.vars.hasOwnProperty(curID[0])) {
-                        console.log(curID[0]);
                         if (lcncsvr.vars[curID[0]].indexed)
                         {
                             if (lcncsvr.vars[curID[0]].convert_to_json) {
@@ -1316,10 +1308,6 @@ define(function (require) {
                             else
                                 lcncsvr.vars[curID[0]].data(data.data);
                         }
-                        if (lcncsvr.vars[curID[0]].convert_to_json)
-                            console.log(JSON.parse(data.data));
-                        else
-                            console.log(data.data);
                     }
                 } catch (ex) {
 //                    console.debug(ex);

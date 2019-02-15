@@ -28,7 +28,11 @@ define(function(require) {
                 {
                     $(self.Panel.getJQueryElement()).find('#run_opstop_toggle').bootstrapSwitch('setState',newVal);
                 });
-
+    
+                self.totalSeconds = parseFloat(self.linuxCNCServer.vars["halpin_run_time_clock.seconds"].data());
+                return self.formatClockText(self.totalSeconds);
+                self.runClockBetweenUpdates();
+                
                 utils.JQVSlider( $( "#run_spindle_rate_slider", self.Panel.getJQueryElement() ), self.linuxCNCServer.vars.spindlerate.data, 0, 2, 0.01, function(event,ui){ self.linuxCNCServer.setSpindleOverride(ui.value); } );
                 utils.JQVSlider( $( "#run_feed_rate_slider", self.Panel.getJQueryElement() ), self.linuxCNCServer.vars.feedrate.data, 0, 2, 0.01, function(event,ui){ self.linuxCNCServer.setFeedrate(ui.value); } );
                 utils.JQVSlider( $( "#run_maxvel_slider", self.Panel.getJQueryElement() ), self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data, 0, 1, 0.01, function(event,ui){ self.linuxCNCServer.setMaxVel(ui.value); } );
@@ -61,9 +65,36 @@ define(function(require) {
         };
 
         self.singleStep = ko.observable(false);
+       
+        self.totalSeconds = 0;
+        self.lastUpdateTime = 0;
+        self.rtcText = ko.observable('0:0:0');
         
-        self.cycleTimeText = ko.computed( function() {
-            return (self.linuxCNCServer.vars.cycleTime.data() );
+        self.runClockBetweenUpdates = function() {
+            console.log('updating');
+            if( !self.linuxCNCServer.vars.paused.data()){
+                var time = self.totalSeconds + (Date.now()/1000) - self.lastUpdateTime;
+                self.formatClockText(time);
+            }
+            else{
+                self.lastUpdateTime = Date.now() / 1000;
+            }
+            setTimeout(function() { self.runClockBetweenUpdates(); }, 100);
+        };
+
+        self.formatClockText = function( totalSeconds ){
+            var t = totalSeconds;
+            var s = (t % 60).toFixed(0).toString().padStart(2, '0');
+            var m = Math.floor((t / 60) % 60).toString().padStart(2, '0');
+            var h = Math.floor(t / 3600).toString().padStart(2, '0');
+            var txt = h + ':' + m + ':' + s;
+            self.rtcText(txt);
+        };
+
+        self.rtcUpdate = ko.computed( function() {
+            self.lastUpdateTime = Date.now() / 1000;
+            self.totalSeconds = parseFloat(self.linuxCNCServer.vars["halpin_run_time_clock.seconds"].data());
+            self.formatClockText(self.totalSeconds);
         });
 
         self.spindleRateText = ko.computed( function() {
