@@ -290,7 +290,7 @@ define(function (require) {
     lcncsvr.vars.board_revision = { data: ko.observable(""), watched: false };
     lcncsvr.vars.dogtag = { data: ko.observable(""), watched: false };
     lcncsvr.vars.system_status = { data: ko.observable(""), watched: false };
-    
+
     lcncsvr.filteredVersions = ko.computed(function() {
         var versions = lcncsvr.vars.versions.data();
         var boardRev = lcncsvr.vars.board_revision.data();

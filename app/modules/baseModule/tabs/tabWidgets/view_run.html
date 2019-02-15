@@ -11,7 +11,7 @@
                 <span data-bind="visible: !singleStep()"><i class="icon-play-circle"></i> {{nls.Resume}}</span>
                 <span data-bind="visible: singleStep"><i class="icon-step-forward"></i> {{nls.Step}}</span>
             </button>
-            <button class="btn btn-warning width-button-larger" data-bind="click: function(){linuxCNCServer.stop();}"><i class="icon-stop"></i> {{nls.Stop}}</button>
+            <button class="btn btn-warning width-button-larger" data-bind="click: function(){ resetClock(); linuxCNCServer.stop();}"><i class="icon-stop"></i> {{nls.Stop}}</button>
         </p>
 
 
@@ -22,8 +22,8 @@
                 <table class="table table table-condensed">
                     <tr class="borderless-table">
                     
-                        <td>
-                            <p style="font-weight: bold;" data-bind="text: rtcText"></p> 
+                        <td style="vertical-align: middle">
+                            <span style="font-weight: bold; font-size: 28px;" data-bind="text: clockText"></span> 
                         </td>
                     
                         
@@ -82,7 +82,7 @@
                     </tr>
                     <tr>
                     <!--Optional Stop-->
-                        <td>
+                        <td style="border: none">
                             <label for="run_opstop_toggle_cb"><h5>{{nls.OptionalStop}}:</h5></label>
                             <span id="run_opstop_toggle" class="switch" data-on="success" data-off="primary" data-bind="event: { 'switch-change': setOptionalStop }">
                             <input id="run_opstop_toggle_cb" type="checkbox"> </span>
