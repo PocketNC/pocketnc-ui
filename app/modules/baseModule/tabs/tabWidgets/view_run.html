@@ -11,7 +11,7 @@
                 <span data-bind="visible: !singleStep()"><i class="icon-play-circle"></i> {{nls.Resume}}</span>
                 <span data-bind="visible: singleStep"><i class="icon-step-forward"></i> {{nls.Step}}</span>
             </button>
-            <button class="btn btn-warning width-button-larger" data-bind="click: function(){ resetClock(); linuxCNCServer.stop();}"><i class="icon-stop"></i> {{nls.Stop}}</button>
+            <button class="btn btn-warning width-button-larger" data-bind="click: function(){ isClockLocked = true; setClockText(0); linuxCNCServer.stop();}"><i class="icon-stop"></i> {{nls.Stop}}</button>
         </p>
 
 

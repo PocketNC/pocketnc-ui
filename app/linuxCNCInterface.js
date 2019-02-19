@@ -260,8 +260,7 @@ define(function (require) {
     lcncsvr.vars.feedrate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
-    
-    lcncsvr.vars["halpin_run_time_clock.seconds"] = { data: ko.observable(0), watched: true };
+    lcncsvr.vars.rtc_seconds = { data: ko.observable(0), watched: true };
     
     lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
                                                // we'll use ui_motion_line in all the component that would otherwise use motion_line and 

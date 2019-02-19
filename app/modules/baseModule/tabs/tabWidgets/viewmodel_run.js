@@ -40,9 +40,7 @@ define(function(require) {
             if (self.singleStep())
                 self.linuxCNCServer.runStep();
             else {
-                self.isTiming = true;
-                self.lastUpdateTime = Date.now();
-                self.runClock();
+                self.isClockLocked = false;
                 self.linuxCNCServer.runFrom(self.linuxCNCServer.ui_motion_line())
             };
         };
@@ -60,93 +58,33 @@ define(function(require) {
                 if (self.singleStep())
                     self.linuxCNCServer.runStep();
                 else {
-                    self.isTiming = true;
-                    self.lastUpdateTime = Date.now();
-                    self.runClock();
                     self.linuxCNCServer.resume();
                 }
             }
         };
 
         self.singleStep = ko.observable(false);
-       
+      
+        self.isClockLocked = true;
         self.clockText = ko.observable("00:00:00");
-        self.lastUpdateTime = 0;
-        self.isTiming = false;
-        
-        //if the program is paused, pause the clock and set the clock text using the halpin value
-        self.linuxCNCServer.vars.paused.data.subscribe( function(newval) {
-            if(newval){
-                self.isTiming = false;
-                self.setClockText(parseFloat( self.linuxCNCServer.vars["halpin_run_time_clock.seconds"].data() ) );
-            }
-        });
-        
-        //Stop the clock if the interpreter enters the idle state
-        //Don't set the clock to the current HAL pin value, because we want clock to be zeroed if the user stopped manually 
-        self.linuxCNCServer.vars.interp_state.data.subscribe( function(newval) {
-            if( newval === self.linuxCNCServer.TASK_INTERP_IDLE ){
-                self.isTiming = false;
-            }
-            else if( newval === self.linuxCNCServer.TASK_INTERP_READING ){
-                self.isTiming = true;
-                self.runClock();
-            }
-
-        });
-        
-        self.linuxCNCServer.vars["halpin_run_time_clock.seconds"].data.subscribe( function() {
-            //We might get a final clock update after stopping due to lag/async
-            //If we stopped manually, ignore it so the clock stays zeroed 
-            if( self.ignoreNextClockUpdate ){
-                self.ignoreNextClockUpdate = false;
-                return;
-            }
-       
-            self.lastUpdateTime = Date.now();
-            if( !self.isTiming && ( self.linuxCNCServer.vars.interp_state.data() === self.linuxCNCServer.TASK_INTERP_READING ) )
-            {
-                self.isTiming = true;
-                self.runClock();
-            }
-            else if ( self.linuxCNCServer.vars.paused.data() ) {
-                self.setClockText(parseFloat( self.linuxCNCServer.vars["halpin_run_time_clock.seconds"].data() ) );
-            }
-        });
-       
-        //keep the clock ticking between updates from HAL
-        self.runClock = function() {
-            if( self.isTiming && ( self.linuxCNCServer.vars.interp_state.data() !== self.linuxCNCServer.TASK_INTERP_IDLE ) )
-            {
-                var time = parseFloat( self.linuxCNCServer.vars["halpin_run_time_clock.seconds"].data() )
-                                + ( ( Date.now() - self.lastUpdateTime ) / 1000 ) ;
-
-                self.setClockText(time);
-                setTimeout(function() { self.runClock(); }, 100);
-            }
+        self.setClockText = function( totalSeconds ){
+            var t = totalSeconds;
+            var s = Math.floor(t % 60).toString().padStart(2, '0');
+            var m = Math.floor((t / 60) % 60).toString().padStart(2, '0');
+            var h = Math.floor(t / 3600).toString().padStart(2, '0');
+            var txt = h + ':' + m + ':' + s;
+            self.clockText(txt);
         };
+        self.linuxCNCServer.vars.rtc_seconds.data.subscribe( function() {
+            if( !self.isClockLocked )
+                self.setClockText( parseFloat( self.linuxCNCServer.vars.rtc_seconds.data() ) );
+        });
         
         //zero the clock if a new program is opened
         self.linuxCNCServer.vars.file.data.subscribe( function(newval) {
             self.setClockText(0);
         });
        
-        //if a program is stopped early, the clock should stop, zero, and not display a potential final update
-        self.resetClock = function(){
-            self.ignoreNextClockUpdate = true;
-            self.isTiming = false;
-            self.setClockText(0);
-        };
- 
-        self.setClockText = function( totalSeconds ){
-            var t = totalSeconds;
-            var s = (t % 60).toFixed(0).toString().padStart(2, '0');
-            var m = Math.floor((t / 60) % 60).toString().padStart(2, '0');
-            var h = Math.floor(t / 3600).toString().padStart(2, '0');
-            var txt = h + ':' + m + ':' + s;
-            self.clockText(txt);
-        };
-
         self.spindleRateText = ko.computed( function() {
             return (self.linuxCNCServer.vars.spindlerate.data() * 100).toFixed(0);
         });
