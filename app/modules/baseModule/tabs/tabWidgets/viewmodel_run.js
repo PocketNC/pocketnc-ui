@@ -61,35 +61,47 @@ define(function(require) {
         };
 
         self.singleStep = ko.observable(false);
-
-        self.spindleRateText = ko.computed( function() {
-            return (self.linuxCNCServer.vars.spindlerate.data() * 100).toFixed(0);
+        
+        self.displayPrecision = 1;
+        self.unit = ko.computed(function() {
+            switch(lcncsvr.MachineUnitsToDisplayUnitsLinearScaleFactor()) {
+                case 25.4:
+                    self.displayPrecision = 0;
+                    return "mm";
+                case 2.54:
+                    self.displayPrecision = 1;
+                    return "cm";
+            }
+            self.displayPrecision = 1;
+            return "in";
         });
-
-        self.feedRateText = ko.computed( function() {
-            return (self.linuxCNCServer.vars.feedrate.data() * 100).toFixed(0);
-        });
-
-        self.currFeedRate = ko.computed( function() {
-            var max = parseFloat(self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data());
-            var vel = parseFloat(self.linuxCNCServer.vars["halpin_motion.current-vel"].data());
-            return ( lcncsvr.MachineUnitsToDisplayUnitsLinear(vel*60).toFixed(0)).toString().padStart(4,' ');
+        
+        self.maxVelPerc = ko.computed( function() {
+            return (parseFloat(self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data()) * 100).toFixed(0);
         });
 
         self.maxVelText = ko.computed( function() {
             var maxVel = parseFloat(self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data());
             if(maxVel > 1) maxVel = 1;
-            return lcncsvr.MachineUnitsToDisplayUnitsLinear(maxVel*60).toFixed(0);
+            return lcncsvr.MachineUnitsToDisplayUnitsLinear(maxVel*60).toFixed(self.displayPrecision);
         });
 
-        self.unit = ko.computed(function() {
-            switch(lcncsvr.MachineUnitsToDisplayUnitsLinearScaleFactor()) {
-                case 25.4:
-                    return "mm";
-                case 2.54:
-                    return "cm";
-            }
-            return "in";
+        self.feedRatePerc = ko.computed( function() {
+            return (self.linuxCNCServer.vars.feedrate.data() * 100).toFixed(0);
+        });
+
+        self.feedRateText = ko.computed( function() {
+            var rate = self.linuxCNCServer.vars.settings.data()[1] * self.linuxCNCServer.vars.feedrate.data();
+            rate = Math.min( rate, (self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data() * 60) )
+            return lcncsvr.MachineUnitsToDisplayUnitsLinear(rate).toFixed(self.displayPrecision);
+        });
+
+        self.spindleRatePerc = ko.computed( function() {
+            return (self.linuxCNCServer.vars.spindlerate.data() * 100).toFixed(0);
+        });
+        
+        self.spindleRateText = ko.computed( function() {
+            return (self.linuxCNCServer.vars.settings.data()[2] * self.linuxCNCServer.vars.spindlerate.data()).toFixed(0);
         });
 
 	};

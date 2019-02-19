@@ -1,3 +1,13 @@
+<style>
+.run-widget-text {
+    text-align: center;
+}
+
+.run-widget-data{
+   font-weight: bold; 
+}
+</style>
+
 <div class="well well-with-label">
 
         <span class="well-label">{{nls.RunTitle}}</span>
@@ -45,10 +55,16 @@
                             </div>
                             <div>
                                 <p><h5>{{nls.MaxVelLine1}}<br>{{nls.MaxVelLine2}}</h5></p>
-                                <p><span><span data-bind="text: maxVelText"></span> <span data-bind="text: unit">in</span>/min </span><button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.setMaxVel(1)}"><i class="icon-refresh"></i></button></p>
+                                <p><span><span data-bind="text: maxVelPerc">100</span>% </span><button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.setMaxVel(1)}"><i class="icon-refresh"></i></button></p>
                                 <p>
-                                <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementMaxVel(1/60)} " type="button"><i class="icon-arrow-up"></i></button>
-                                <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementMaxVel(-1/60)} " type="button"><i class="icon-arrow-down"></i></button>
+                                <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementMaxVel(1/100)} " type="button"><i class="icon-arrow-up"></i></button>
+                                <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementMaxVel(-1/100)} " type="button"><i class="icon-arrow-down"></i></button>
+                                </p>
+                                <p class="run-widget-text" title="Maximum Feed Rate">
+                                    <span>
+                                        <span class="run-widget-data" style="font-weight: bold;" data-bind="text: maxVelText"></span> 
+                                        <span data-bind="text: unit">in</span>/min 
+                                    </span>
                                 </p>
                             </div>
                         </td>
@@ -59,12 +75,17 @@
                             </div>
                             <div>
                                 <p><h5>{{nls.FeedRateLine1}}<br>{{nls.FeedRateLine2}}</h5></p>
-                                <p><span><span data-bind="text: feedRateText"></span>% </span><button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.setFeedrate(1)}"><i class="icon-refresh"></i></button></p>
+                                <p><span><span data-bind="text: feedRatePerc">100</span>% </span><button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.setFeedrate(1)}"><i class="icon-refresh"></i></button></p>
                                 <p>
                                 <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementFeedrate(0.05)} " type="button"><i class="icon-arrow-up"></i></button>
                                 <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementFeedrate(-0.05)} " type="button"><i class="icon-arrow-down"></i></button>
                                 </p>
-                                <p style="text-align: right;">  <span> <span style="font-weight: bold" data-bind="text: currFeedRate"></span>  <abbr title="Active Feed Rate"><span data-bind="text: unit">in</span>/min </abbr></span></p>
+                                <p class="run-widget-text" title="Active Feed Rate">  
+                                    <span> 
+                                        <span class="run-widget-data" style="font-weight: bold;" data-bind="text: feedRateText"></span> 
+                                        <span data-bind="text: unit">in</span>/min 
+                                    </span>
+                                </p>
                             </div>
                         </td>
 
@@ -74,10 +95,16 @@
                             </div>
                             <div>
                                 <p><h5>{{nls.SpindleRateLine1}}<br>{{nls.SpindleRateLine2}}</h5></p>
-                                <p><span><span data-bind="text: spindleRateText"></span>% </span><button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.setSpindleOverride(1)}"><i class="icon-refresh"></i></button></p>
+                                <p><span><span data-bind="text: spindleRatePerc">100</span>% </span><button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.setSpindleOverride(1)}"><i class="icon-refresh"></i></button></p>
                                 <p>
-                                <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementSpindleOverride(0.05)} " type="button"><i class="icon-arrow-up"></i></button>
-                                <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementSpindleOverride(-0.05)}" type="button"><i class="icon-arrow-down"></i></button>
+                                    <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementSpindleOverride(0.05)} " type="button"><i class="icon-arrow-up"></i></button>
+                                    <button class="btn btn-mini" data-bind="click: function(){linuxCNCServer.incrementSpindleOverride(-0.05)}" type="button"><i class="icon-arrow-down"></i></button>
+                                </p>
+                                <p class="run-widget-text">  
+                                    <span>
+                                        <span class="run-widget-data" style="font-weight: bold;" data-bind="text: spindleRateText"></span>
+                                        RPM</abbr>
+                                    </span>
                                 </p>
                             </div>
                         </td>
