@@ -72,6 +72,7 @@ define(function (require) {
     lcncsvr.vars["halpin_halui.max-velocity.value"] = { data: ko.observable("1"), watched: true };
     lcncsvr.vars["halpin_spindle_voltage.speed_measured"] = { data: ko.observable("1"), watched: true };
     lcncsvr.vars["halpin_hss_warmup.warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
+    lcncsvr.vars["halpin_motion.current-vel"] = { data: ko.observable(0), watched: true };
 
     lcncsvr.isClientConfigValid = function()
     {

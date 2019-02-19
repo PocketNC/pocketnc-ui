@@ -70,6 +70,12 @@ define(function(require) {
             return (self.linuxCNCServer.vars.feedrate.data() * 100).toFixed(0);
         });
 
+        self.currFeedRate = ko.computed( function() {
+            var max = parseFloat(self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data());
+            var vel = parseFloat(self.linuxCNCServer.vars["halpin_motion.current-vel"].data());
+            return ( lcncsvr.MachineUnitsToDisplayUnitsLinear(vel*60).toFixed(0)).toString().padStart(4,' ');
+        });
+
         self.maxVelText = ko.computed( function() {
             var maxVel = parseFloat(self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data());
             if(maxVel > 1) maxVel = 1;
