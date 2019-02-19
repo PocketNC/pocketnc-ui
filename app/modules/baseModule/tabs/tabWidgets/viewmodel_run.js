@@ -40,7 +40,6 @@ define(function(require) {
             if (self.singleStep())
                 self.linuxCNCServer.runStep();
             else {
-                self.isClockLocked = false;
                 self.linuxCNCServer.runFrom(self.linuxCNCServer.ui_motion_line())
             };
         };
@@ -65,7 +64,7 @@ define(function(require) {
 
         self.singleStep = ko.observable(false);
       
-        self.isClockLocked = true;
+
         self.clockText = ko.observable("00:00:00");
         self.setClockText = function( totalSeconds ){
             var t = totalSeconds;
@@ -75,16 +74,24 @@ define(function(require) {
             var txt = h + ':' + m + ':' + s;
             self.clockText(txt);
         };
+        
+        self.isClockLocked = true;
+        
         self.linuxCNCServer.vars.rtc_seconds.data.subscribe( function() {
+            //unlock if interpreter is not idle (paused, waiting, or reading)
+            if( self.isClockLocked && (self.linuxCNCServer.vars.interp_state.data() > self.linuxCNCServer.TASK_INTERP_IDLE ) )
+                self.isClockLocked = false;
+                
             if( !self.isClockLocked )
                 self.setClockText( parseFloat( self.linuxCNCServer.vars.rtc_seconds.data() ) );
         });
-        
+
         //zero the clock if a new program is opened
         self.linuxCNCServer.vars.file.data.subscribe( function(newval) {
             self.setClockText(0);
         });
-       
+      
+
         self.spindleRateText = ko.computed( function() {
             return (self.linuxCNCServer.vars.spindlerate.data() * 100).toFixed(0);
         });
