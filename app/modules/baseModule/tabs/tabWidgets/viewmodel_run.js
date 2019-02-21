@@ -78,19 +78,8 @@ define(function(require) {
         self.isClockLocked = true;
         
         self.linuxCNCServer.vars.rtc_seconds.data.subscribe( function() {
-            //unlock if interpreter is not idle (paused, waiting, or reading)
-            if( self.isClockLocked && (self.linuxCNCServer.vars.interp_state.data() > self.linuxCNCServer.TASK_INTERP_IDLE ) )
-                self.isClockLocked = false;
-                
-            if( !self.isClockLocked )
-                self.setClockText( parseFloat( self.linuxCNCServer.vars.rtc_seconds.data() ) );
+            self.setClockText( parseFloat( self.linuxCNCServer.vars.rtc_seconds.data() ) );
         });
-
-        //zero the clock if a new program is opened
-        self.linuxCNCServer.vars.file.data.subscribe( function(newval) {
-            self.setClockText(0);
-        });
-      
 
         self.spindleRateText = ko.computed( function() {
             return (self.linuxCNCServer.vars.spindlerate.data() * 100).toFixed(0);
