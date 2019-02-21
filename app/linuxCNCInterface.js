@@ -622,6 +622,7 @@ define(function (require) {
     lcncsvr.stop = function()
     {
         lcncsvr.abort();
+        lcncsvr.resetClock();
         return;
     }
     
@@ -739,6 +740,7 @@ define(function (require) {
 
     lcncsvr.openFile = function( filename )
     {
+        lcncsvr.resetClock();
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
         lcncsvr.sendCommand("program_open","program_open",[filename]);
@@ -1122,7 +1124,11 @@ define(function (require) {
     lcncsvr.downloadChunkGCode = function(requestId, fileIdx, chunkSize) {
         lcncsvr.sendCommand(requestId, "program_download_chunk",[fileIdx, chunkSize]);
     }
-    
+   
+    lcncsvr.resetClock = function(){
+        lcncsvr.sendCommand("reset_clock", "reset_clock", []);
+    }
+
     lcncsvr.sendAllWatchRequests = function (doRequiresFeature) {
         try {
             var id;
