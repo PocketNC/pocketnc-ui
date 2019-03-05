@@ -35,7 +35,6 @@ define(function(require) {
                                 incr *= 10;
                         }
                     }
-                    console.log(self.mouseWheelBufferedEvents * incr);
                     self.linuxCNCServer.jogIncr(self.selected_axis(), self.mouseWheelBufferedEvents*incr);
                     self.mouseWheelBufferedEvents = 0;
                     self.timerSet = false;
