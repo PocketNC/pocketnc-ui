@@ -20,17 +20,22 @@ define(function(require) {
             }
             if(!self.timerSet) {
                 self.mouseWheelTimer = setTimeout(function() {
-                    var step = self.step();
-                    if(step == 0) {
-                        var a = self.selected_axis();
-                        if(a > 2) { // if rotational
-                            step = 1;
-                        } else {
-                            step = .01;
+                    var incr = self.step();
+                    if(self.selected_axis() <= 2) {
+                        //adjust jog increment appropriately for current display units if on linear axis
+                        incr = self.incr();
+                    }
+                    if(self.step() == 0) {
+                        if(self.selected_axis() > 2){
+                            incr = 1;
+                        }
+                        else{
+                            incr = 0.01 / self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor();
+                            if(self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor() === 25.4)
+                                incr *= 10;
                         }
                     }
-                    console.log(self.mouseWheelBufferedEvents*step);
-                    self.linuxCNCServer.jogIncr(self.selected_axis(), self.mouseWheelBufferedEvents*step);
+                    self.linuxCNCServer.jogIncr(self.selected_axis(), self.mouseWheelBufferedEvents*incr);
                     self.mouseWheelBufferedEvents = 0;
                     self.timerSet = false;
                 }, 100);
@@ -202,7 +207,7 @@ define(function(require) {
         self.minus_pressed = function(data, event) {
             self.minus_key_down = true;
             var multiplier = 1;
-            var incr = self.step();
+            var incr = - self.step();
             if(self.selected_axis() > 2) {
                 multiplier = 180;
             }
