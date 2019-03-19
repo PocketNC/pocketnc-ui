@@ -72,7 +72,6 @@ define(function (require) {
     lcncsvr.vars["halpin_halui.max-velocity.value"] = { data: ko.observable("1"), watched: true };
     lcncsvr.vars["halpin_spindle_voltage.speed_measured"] = { data: ko.observable("1"), watched: true };
     lcncsvr.vars["halpin_hss_warmup.warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
-    lcncsvr.vars["halpin_motion.current-vel"] = { data: ko.observable(0), watched: true };
 
     lcncsvr.isClientConfigValid = function()
     {
@@ -262,6 +261,7 @@ define(function (require) {
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
     lcncsvr.vars.rtc_seconds = { data: ko.observable(0), watched: true };
+    lcncsvr.vars.rotary_motion_only = {data: ko.observable('FALSE'), watched: true };
     
     lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
                                                // we'll use ui_motion_line in all the component that would otherwise use motion_line and 

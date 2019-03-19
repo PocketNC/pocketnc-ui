@@ -32,6 +32,11 @@ define(function(require) {
                 utils.JQVSlider( $( "#run_spindle_rate_slider", self.Panel.getJQueryElement() ), self.linuxCNCServer.vars.spindlerate.data, 0, 2, 0.01, function(event,ui){ self.linuxCNCServer.setSpindleOverride(ui.value); } );
                 utils.JQVSlider( $( "#run_feed_rate_slider", self.Panel.getJQueryElement() ), self.linuxCNCServer.vars.feedrate.data, 0, 2, 0.01, function(event,ui){ self.linuxCNCServer.setFeedrate(ui.value); } );
                 utils.JQVSlider( $( "#run_maxvel_slider", self.Panel.getJQueryElement() ), self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data, 0, 1, 0.01, function(event,ui){ self.linuxCNCServer.setMaxVel(ui.value); } );
+
+                self.linuxCNCServer.vars.gcodes.data.subscribe( function(newVal) {
+                    self.setFeedRateMode(newVal);
+                });
+                self.setFeedRateMode(self.linuxCNCServer.vars.gcodes.data());
             }
 		};
 
@@ -95,7 +100,10 @@ define(function(require) {
         });
         
         self.maxVelPerc = ko.computed( function() {
-            return (parseFloat(self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data()) * 100).toFixed(0);
+            //when initialized the halpin has a value of 1e101, so we need to clamp the displayed value
+            var mvp = parseFloat(self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data()) * 100;
+            mvp = Math.min(100, mvp);
+            return mvp.toFixed(0);
         });
 
         self.maxVelText = ko.computed( function() {
@@ -103,15 +111,57 @@ define(function(require) {
             if(maxVel > 1) maxVel = 1;
             return lcncsvr.MachineUnitsToDisplayUnitsLinear(maxVel*60).toFixed(self.displayPrecision);
         });
+        
+        self.feedRateModes = {
+            G93: 'INVERSE',
+            G94: 'UNITS_PER_MINUTE',
+            G95: 'UNITS_PER_REV'
+        };
+
+        self.feedRateMode = ko.observable(self.feedRateModes.G93); 
+
+        self.setFeedRateMode = function(gcodes){
+            if(gcodes.indexOf(930) !== -1)
+                self.feedRateMode(self.feedRateModes.G93);
+            else if(gcodes.indexOf(940) !== -1)
+                self.feedRateMode(self.feedRateModes.G94);
+            else if(gcodes.indexOf(950) !== -1)
+                self.feedRateMode(self.feedRateModes.G95);
+        };
+       
+        self.isFeedRateClamped = ko.observable(false);
 
         self.feedRatePerc = ko.computed( function() {
             return (self.linuxCNCServer.vars.feedrate.data() * 100).toFixed(0);
         });
 
         self.feedRateText = ko.computed( function() {
-            var rate = self.linuxCNCServer.vars.settings.data()[1] * self.linuxCNCServer.vars.feedrate.data();
-            rate = Math.min( rate, (self.linuxCNCServer.vars["halpin_halui.max-velocity.value"].data() * 60) )
-            return lcncsvr.MachineUnitsToDisplayUnitsLinear(rate).toFixed(self.displayPrecision);
+          var rate = self.linuxCNCServer.vars.settings.data()[1] * self.linuxCNCServer.vars.feedrate.data();
+          var velInDisplayUnits, maxVel;
+          if(self.linuxCNCServer.vars.rotary_motion_only.data()){
+            velInDisplayUnits = rate;
+            // V2 rotational axis max speed 40 deg/sec=2400 deg/min
+            maxVel = 2400;
+          }
+          else{
+            velInDisplayUnits = (rate / lcncsvr.DisplayUnitsToProgramUnits(1));
+            maxVel = parseFloat(self.maxVelText()); 
+          }
+
+          if(self.feedRateMode() === self.feedRateModes.G95){
+            //in G95 mode, linear velocity = feedrate * spindlerate
+            velInDisplayUnits = velInDisplayUnits * self.linuxCNCServer.vars.settings.data()[2];
+          }
+
+          if( velInDisplayUnits > maxVel ){
+            self.isFeedRateClamped(true);
+            velInDisplayUnits = maxVel;
+          }
+          else{
+            self.isFeedRateClamped(false);
+          }
+          
+          return velInDisplayUnits.toFixed(self.displayPrecision);
         });
 
         self.spindleRatePerc = ko.computed( function() {
