@@ -80,6 +80,36 @@
                         </div>
                     </div>
 
+                </form>
+
+                <form class="form-horizontal">
+
+                    <div class="control-group">
+                        <label class="control-label" for="inputPressureUnits">{{nls.PressureUnits}}</label>
+                        <div class="controls">
+                            <select data-bind="value: getPressureUnitValue" class="" id="inputPressureUnits" multiple="false">
+                                <option value="PSI">{{nls.PSI}}</option>
+                                <option value="MPa">{{nls.MPa}}</option>
+                            </select>
+
+                        </div>
+                    </div>
+
+                </form>
+
+                <form class="form-horizontal">
+
+                    <div class="control-group">
+                        <label class="control-label" for="inputTemperatureUnits">{{nls.TemperatureUnits}}</label>
+                        <div class="controls">
+                            <select data-bind="value: getTemperatureUnitValue" class="" id="inputTemperatureUnits" multiple="false">
+                                <option value="F">{{nls.Fahrenheit}}</option>
+                                <option value="C">{{nls.Celsius}}</option>
+                            </select>
+
+                        </div>
+                    </div>
+                
                     <div class="control-group">
                         <div class="controls">
                             <button class="btn" data-bind="click: refreshDisplaySettings">{{nls.Refresh}}</button>
@@ -88,7 +118,6 @@
                     </div>
 
                 </form>
-
 
             </div>
 

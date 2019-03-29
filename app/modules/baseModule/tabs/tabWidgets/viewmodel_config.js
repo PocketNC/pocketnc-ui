@@ -64,12 +64,16 @@ define(function(require) {
         {
             self.settings.persist.DisplayUnitsPerMM.ResetScratch();
             self.settings.persist.ChangeDisplayUnitsToProgramUnits.ResetScratch();
+            self.settings.persist.PressureUnits.ResetScratch();
+            self.settings.persist.TemperatureUnits.ResetScratch();
         }
 
         this.saveDisplaySettings = function()
         {
             self.settings.persist.ChangeDisplayUnitsToProgramUnits.SaveScratch();
             self.settings.persist.DisplayUnitsPerMM.SaveScratch();
+            self.settings.persist.PressureUnits.SaveScratch();
+            self.settings.persist.TemperatureUnits.SaveScratch();
         }
 
         this.refreshBackplotSettings = function()
@@ -248,6 +252,27 @@ define(function(require) {
                         self.settings.persist.DisplayUnitsPerMM.Scratch(1/25.4);
                         break;
                 }
+            }
+        });
+
+        this.getPressureUnitValue = ko.computed(
+        {
+            read: function() {
+                return self.settings.persist.PressureUnits.Scratch();
+            },
+            write: function(newval){
+                self.settings.persist.PressureUnits.Scratch(newval);
+            }
+        });
+
+        this.getTemperatureUnitValue = ko.computed(
+        {
+            read: function() {
+                return self.settings.persist.TemperatureUnits.Scratch();
+            },
+            write: function(newval){
+                console.log(newval);
+                self.settings.persist.TemperatureUnits.Scratch(newval);
             }
         });
 

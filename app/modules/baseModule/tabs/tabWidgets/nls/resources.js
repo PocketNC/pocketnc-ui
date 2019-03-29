@@ -19,10 +19,12 @@ define({
         "PerspectiveView": "PerspectiveView",
         "Refresh": "Refresh",
 
+        "SensorsTitle" : "Sensors",
+
         "SpindleTitle" : "Spindle",
         "CoolantTitle" : "Coolant",
         "GCodesTitle" : "Active GCodes",
-
+        
         "MCodesTitle": "Misc Controls",
         "Coolant" : "Coolant",
         "Mist": "Mist",
@@ -152,7 +154,13 @@ define({
         "Password": "Password",
         "Refresh": "Refresh",
         "Save":     "Save",
-        "DisplayUnits": "Display Units",
+        "PressureUnits": "Pressure Units",
+        "MPa": "MPa",
+        "PSI": "PSI",
+        "TemperatureUnits": "Temperature Units",
+        "Fahrenheit": "Fahrenheit",
+        "Celsius": "Celsius",
+        "DisplayUnits": "Length Units",
         "Inches" : "Inches",
         "Millimeters": "Millimeters",
         "Centimeters": "Centimeters",

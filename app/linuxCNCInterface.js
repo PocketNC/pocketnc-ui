@@ -71,7 +71,11 @@ define(function (require) {
     lcncsvr.vars.program_units = { data: ko.observable(0), watched: true };
     lcncsvr.vars["halpin_halui.max-velocity.value"] = { data: ko.observable("1"), watched: true };
     lcncsvr.vars["halpin_spindle_voltage.speed_measured"] = { data: ko.observable("1"), watched: true };
+    lcncsvr.vars["halpin_hss_warmup.full_warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
     lcncsvr.vars["halpin_hss_warmup.warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
+    lcncsvr.vars["halpin_hss_sensors.detected"] = { data: ko.observable("FALSE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
+    lcncsvr.vars["halpin_hss_sensors.pressure"] = { data: ko.observable(-999), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
+    lcncsvr.vars["halpin_hss_sensors.temperature"] = { data: ko.observable(-999), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
 
     lcncsvr.isClientConfigValid = function()
     {
@@ -84,6 +88,10 @@ define(function (require) {
     lcncsvr.DisplayUnitsPerMM = ko.observable(1);
     lcncsvr.DisplayPrecision = ko.computed(function(){ if (lcncsvr.DisplayUnitsPerMM() >= 1) return 3; return 4; });
     lcncsvr.ChangeDisplayUnitsToProgramUnits = ko.observable(false);
+    
+    lcncsvr.PressureUnits = ko.observable("PSI");
+    lcncsvr.TemperatureUnits = ko.observable("F");
+
 
     lcncsvr.CheckingForUpdates = ko.observable(false);
     lcncsvr.SettingVersion = ko.observable(false);
@@ -1067,8 +1075,11 @@ define(function (require) {
         lcncsvr.refreshSystemStatus();
     }
 
-    lcncsvr.warmUpSpindle = function() {
-        lcncsvr.mdi("M670");
+    lcncsvr.warmupSpindle = function() {
+        if(lcncsvr.vars["halpin_hss_warmup.full_warmup_needed"].data() == 'TRUE' )
+            lcncsvr.mdi("M670");
+        else
+            lcncsvr.mdi("M671");
     }
 
     lcncsvr.getFeatures = function() {

@@ -50,6 +50,8 @@ define(['./linuxCNCInterface.js', './core/helpers/utility.js'], function(linuxcn
     settings.addPersistentSetting("ProbeRadius",  0.1,  true );
     settings.addPersistentSetting("GaugeHeight",    1,  true );
     settings.addPersistentSetting("MDIHistory",    [],  true );
+    settings.addPersistentSetting("TemperatureUnits",   settings.linuxCNCServer.TemperatureUnits(),  true );
+    settings.addPersistentSetting("PressureUnits",   settings.linuxCNCServer.PressureUnits(),  true );
     settings.addPersistentSetting("DisplayUnitsPerMM",   settings.linuxCNCServer.DisplayUnitsPerMM(),  true );
     settings.addPersistentSetting("ChangeDisplayUnitsToProgramUnits",  settings.linuxCNCServer.ChangeDisplayUnitsToProgramUnits(),  true );
     settings.addPersistentSetting("BPShowGrid",  true,  true );
@@ -72,6 +74,8 @@ define(['./linuxCNCInterface.js', './core/helpers/utility.js'], function(linuxcn
 
     // these settings need to be pushed to the linuxCNCServer
     settings.persist.DisplayUnitsPerMM.subscribe(function(newval){ settings.linuxCNCServer.DisplayUnitsPerMM(newval); });
+    settings.persist.PressureUnits.subscribe(function(newval){ settings.linuxCNCServer.PressureUnits(newval); });
+    settings.persist.TemperatureUnits.subscribe(function(newval){ settings.linuxCNCServer.TemperatureUnits(newval); });
     settings.persist.ChangeDisplayUnitsToProgramUnits.subscribe(function(newval){ settings.linuxCNCServer.ChangeDisplayUnitsToProgramUnits(newval)});
     settings.persist.JogStep.subscribe(function(newval){settings.linuxCNCServer.jog_step(newval) });
     settings.persist.JogFeedSlow.subscribe(function(newval){settings.linuxCNCServer.jog_speed_slow(newval) });

@@ -10,6 +10,7 @@ define(function(require) {
     var ViewModel_run = require('../tabWidgets/viewmodel_run');
     var ViewModel_spindle = require('../tabWidgets/viewmodel_spindle');
     var ViewModel_fileOpen = require('../tabWidgets/viewmodel_fileOpen');
+    var ViewModel_sensors = require('../tabWidgets/viewmodel_sensors');
     var ViewModel_gcodes = require('../tabWidgets/viewmodel_gcodes');
 //    var ViewModel_backplot = require('../tabWidgets/viewmodel_backplot');
 
@@ -21,6 +22,7 @@ define(function(require) {
         var panel_run = null;
         var panel_spindle = null;
         var panel_coolant = null;
+        var panel_sensors = null;
         var panel_gcodes = null;
 //        var panel_backplot = null;
         var panel_fileopen = null;
@@ -32,6 +34,7 @@ define(function(require) {
         var vm_fileopen = null;
         var vm_spindle = null;
         var vm_coolant = null;
+        var vm_sensors = null;
         var vm_gcodes = null;
 //        var vm_backplot = null;
 
@@ -95,6 +98,13 @@ define(function(require) {
                     ko.applyBindings( vm_gcodes, panel_gcodes.getDomElement());
                 }
                 vm_gcodes.initialize(panel_gcodes);
+
+                if (!panel_sensors) {
+                    vm_sensors = new ViewModel_sensors(moduleContext, privateContext);
+                    panel_sensors = new Boiler.ViewTemplate(panel.getJQueryElement().find("#SENSORS_PANEL"), vm_sensors.getTemplate(), vm_sensors.getNls());
+                    ko.applyBindings( vm_sensors, panel_sensors.getDomElement());
+                }
+                vm_sensors.initialize(panel_sensors);
 
                 /*
                 if (!panel_backplot) {
