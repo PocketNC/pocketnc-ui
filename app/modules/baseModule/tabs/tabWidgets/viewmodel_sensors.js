@@ -10,7 +10,7 @@ define(function(require) {
 		self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
             
                 self.hssSensorsDetected = ko.computed( function() {
-                    return self.linuxCNCServer.vars['halpin_hss_sensors.detected'] == 'TRUE'
+                    return self.linuxCNCServer.vars['halpin_hss_sensors.detected'].data() == 'TRUE'
                 });
 
                 self.tempText = ko.observable("--.--");
