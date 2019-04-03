@@ -29,7 +29,7 @@ define(function(require) {
                 self.linuxCNCServer.vars["halpin_hss_sensors.pressure"].data.subscribe(
                     function(newval) {
                         var p = parseFloat(newval);
-                        if(self.linuxCNCServer.PressureUnits() == "PSI"){
+                        if(self.linuxCNCServer.PressureUnits() == "PSIA"){
                             //Data is in MPA by default, convert to PSI
                             p = p * 145.038
                             self.pressText(p.toFixed(1));

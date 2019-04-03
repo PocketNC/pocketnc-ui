@@ -89,7 +89,7 @@ define(function (require) {
     lcncsvr.DisplayPrecision = ko.computed(function(){ if (lcncsvr.DisplayUnitsPerMM() >= 1) return 3; return 4; });
     lcncsvr.ChangeDisplayUnitsToProgramUnits = ko.observable(false);
     
-    lcncsvr.PressureUnits = ko.observable("PSI");
+    lcncsvr.PressureUnits = ko.observable("PSIA");
     lcncsvr.TemperatureUnits = ko.observable("F");
 
 
