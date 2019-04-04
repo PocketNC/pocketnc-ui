@@ -7,6 +7,7 @@ define(function(require) {
 
 		var self = this;
 		self.Panel = null;
+    self.highPressureLimit = 0.172;
 		self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
             
                 self.hssSensorsDetected = ko.computed( function() {
@@ -25,10 +26,11 @@ define(function(require) {
                 );
 
                 self.pressText = ko.observable("--.--");
-                self.pressArr = [];
+                self.highPressure = ko.observable(false);
                 self.linuxCNCServer.vars["halpin_hss_sensors.pressure"].data.subscribe(
                     function(newval) {
                         var p = parseFloat(newval);
+                        self.highPressure(p > self.highPressureLimit);
                         if(self.linuxCNCServer.PressureUnits() == "PSIA"){
                             //Data is in MPA by default, convert to PSI
                             p = p * 145.038
@@ -39,6 +41,7 @@ define(function(require) {
                         }
                     }
                 );   
+
 
                 this.getTemplate = function()
 		{

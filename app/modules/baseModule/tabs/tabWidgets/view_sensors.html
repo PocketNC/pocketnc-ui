@@ -21,7 +21,8 @@
             </div>
             <div id="press">
                     <h5 class="sensor-data">Air Supply Pressure: </h5>
-                    <span data-bind="text: pressText"></span><span> </span><span data-bind="text: linuxCNCServer.PressureUnits"</span>
+                    <abbr title="Caution: Pressure approaching or greater than sensor's maximum read value." style="color: red"  data-bind="visible: highPressure"><span data-bind="text: pressText"></span><span> </span><span data-bind="text: linuxCNCServer.PressureUnits"</span></abbr>
+                    <span data-bind="visible: !highPressure()"><span data-bind="text: pressText, attr: { color: highPressure() ? 'red' : ''}"></span><span></span><span> </span><span data-bind="text: linuxCNCServer.PressureUnits"</span></span>
             </div>
         </div>
     </div>
