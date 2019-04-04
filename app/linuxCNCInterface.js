@@ -1126,7 +1126,11 @@ define(function (require) {
     }
 
     lcncsvr.uploadChunkGCode = function(filename, data, start, end, ovw) {
-        lcncsvr.sendCommand("program_upload_chunk","program_upload_chunk",[filename, data, start, end, ovw]);
+      if( end ){
+        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
+        lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
+      }
+      lcncsvr.sendCommand("program_upload_chunk","program_upload_chunk",[filename, data, start, end, ovw]);
     }
 
     lcncsvr.downloadChunkGCode = function(requestId, fileIdx, chunkSize) {
