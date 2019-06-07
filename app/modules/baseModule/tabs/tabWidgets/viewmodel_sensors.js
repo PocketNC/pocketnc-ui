@@ -20,18 +20,13 @@ define(function(require) {
     self.vertAxisMaxLabelY = 4;
     self.vertAxisLabelX = -15;
  
-  	self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
-            
-    self.hssSensorsDetected = ko.computed( function() {
-        return self.linuxCNCServer.vars['halpin_hss_sensors.detected'].data() == 'TRUE';
-    });
-
-
+    self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
+    
     //--------TEMPERATURE SECTION--------
     //Data from server will always be in Celsius
     self.temperatureInDisplayUnits = function( tData ){
       tNum = parseFloat(tData);
-      if(self.linuxCNCServer.TemperatureUnits() == "F")
+      if(self.linuxCNCServer.TemperatureUnits() === "F")
         tNum = ( tNum * 9 / 5 ) + 32;
       return tNum.toFixed(1);
     };
@@ -106,7 +101,7 @@ define(function(require) {
     //Data from server will be in MPaA
     self.pressureInDisplayUnits = function( pVal ){
       pNum = parseFloat( pVal );
-      if( self.linuxCNCServer.PressureUnits() == "PSIA" ){
+      if( self.linuxCNCServer.PressureUnits() === "PSIA" ){
         pNum = pNum * 145.038
         return pNum.toFixed(1);
       }
