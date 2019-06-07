@@ -1,30 +1,105 @@
 <style>
 #temp {
-    float: left;
+  float: left;
 }
 #press{
-    float: right;
+  float: right;
+}
+.sensor{
+  margin-bottom: 0px;
 }
 .sensor-data{
-    display: inline;
+  display: inline;
+}
+.sensor-chart{
+  float: right;
+  padding-bottom: 20px;
+  padding-top: 10px;
+  margin-left: 20px;
+  overflow:visible;
+}
+.scale{
+  stroke: #ccc;
+  stroke-width: 1;
+}
+.scale-labels{
+  font-size: 10px;
 }
 </style>
 
-<div class="well well-with-label" data-bind="style: { display: hssSensorsDetected() ? '' : 'none' } "> 
+<div class="well well-with-label"> 
     <span class="well-label"><span>{{nls.SensorsTitle}}</span></span>
 
     <div class="row-fluid">
         <div class="span12">
-            <div id="temp">
-                    <h5 class="sensor-data">Main Board Temperature: </h5>
-                    <span data-bind="text: tempText"></span><span> </span><span data-bind="text: linuxCNCServer.TemperatureUnits"></span>
+          
+            <div id="temp" class="sensor">
+              <h5 class="sensor-data">Ambient Temperature: </h5>
+              <span data-bind="text: temperatureText"></span><span> </span><span data-bind="text: linuxCNCServer.TemperatureUnits"></span>
+              <div>
+                <svg class="sensor-chart chart" data-bind="attr: { width: chartWidth, height: chartHeight }">
+                  <!--<text class="tail-text" data-bind="text: temperatureTailText, attr: { x: xCoordTemperatureTailText, y: yCoordTemperatureTailText }">0.01</text>-->
+                  <line class="scale" x1="0" x2="0" y1="0" data-bind="attr: { y2: chartHeight }"></line>
+                  <g class="scale-labels">
+                    <text data-bind="text: minScaleTemperature, attr: { x: vertAxisLabelX, y: chartHeight }">
+                    </text>
+                    <text data-bind="text: maxScaleTemperature, attr: { x: vertAxisLabelX, y: vertAxisMaxLabelY }">
+                    </text>
+                  </g>
+                  <line class="scale" x1="0" data-bind="attr: { x2: chartWidth, y1: chartHeight, y2: chartHeight }"></line>
+                  <g class="scale-labels">
+                    <text data-bind="text: timeOriginLabel, attr: { x: timeOriginLabelX, y: timeLabelY }">
+                    </text>
+                    <text data-bind="text: timeEndLabel, attr: { x: timeEndLabelX, y: timeLabelY }">
+                    </text>
+                  </g>
+                  <g id="scaleTemp" data-bind="attr: { transform: temperatureTransformScale }">
+                  <g id="offsetTemp" data-bind="attr: { transform: temperatureTransformTranslate }">
+                  <polyline 
+                    vector-effect="non-scaling-stroke"
+                    fill="none"
+                    stroke-linejoin="bevel"
+                    data-bind="attr: { stroke: lineColor, 'stroke-width': strokeWidth, points: temperaturePoints }"
+                  />
+                  </g>
+                  </g>
+                </svg>
+              </div>
             </div>
-            <div id="press">
-                    <h5 class="sensor-data">Air Supply Pressure: </h5>
-                    <abbr title="Caution: Pressure approaching or greater than sensor's maximum read value." style="color: red"  data-bind="visible: highPressure"><span data-bind="text: pressText"></span><span> </span><span data-bind="text: linuxCNCServer.PressureUnits"</span></abbr>
-                    <span data-bind="visible: !highPressure()"><span data-bind="text: pressText, attr: { color: highPressure() ? 'red' : ''}"></span><span></span><span> </span><span data-bind="text: linuxCNCServer.PressureUnits"</span></span>
+
+            <div id="press" class="sensor">
+              <h5 class="sensor-data">Air Supply Pressure: </h5>
+              <abbr title="Caution: Pressure approaching or greater than sensor's maximum read value." style="color: red"  data-bind="visible: isPressureHigh"><span data-bind="text: pressureText"></span><span> </span><span data-bind="text: linuxCNCServer.PressureUnits"</span></abbr>
+              <span data-bind="visible: !isPressureHigh()"><span data-bind="text: pressureText, attr: { color: isPressureHigh() ? 'red' : ''}"></span><span></span><span> </span><span data-bind="text: linuxCNCServer.PressureUnits"</span></span>
+              </span>
+              <div>
+                <svg class="sensor-chart chart" data-bind="attr: { width: chartWidth, height: chartHeight }">
+                  <line class="scale" x1="0" x2="0" y1="0" data-bind="attr: { y2: chartHeight }"></line>
+                  <g class="scale-labels">
+                    <text data-bind="text: minPressure, attr: { x: pressureMinLabelX, y: chartHeight }"></text>
+                    <text data-bind="text: maxPressure, attr: { x: pressureMaxLabelX, y: vertAxisMaxLabelY }"></text>
+                  </g>
+                  <line class="scale" x1="0" data-bind="attr: { x2: chartWidth, y1: chartHeight, y2: chartHeight }"></line>
+                  <g class="scale-labels">
+                    <text data-bind="text: timeOriginLabel, attr: { x: timeOriginLabelX, y: timeLabelY }">
+                    </text>
+                    <text data-bind="text: timeEndLabel, attr: { x: timeEndLabelX, y: timeLabelY }">
+                    </text>
+                  </g>
+                  <g id="scalePress" data-bind="attr: { transform: pressureTransformScale }">
+                  <g id="offsetPress" data-bind="attr: { transform: pressureTransformTranslate }">
+                  <polyline 
+                    vector-effect="non-scaling-stroke"
+                    fill="none"
+                    stroke-linejoin="bevel"
+                    data-bind="attr: { stroke: lineColor, 'stroke-width': strokeWidth, points: pressurePoints }"
+                  />
+                  </g>
+                  </g>
+               </svg>
+              </div>
             </div>
+
         </div>
     </div>
-
 </div>
