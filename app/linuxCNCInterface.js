@@ -268,7 +268,9 @@ define(function (require) {
     lcncsvr.vars.feedrate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
-
+    lcncsvr.vars.rtc_seconds = { data: ko.observable(0), watched: true };
+    lcncsvr.vars.rotary_motion_only = {data: ko.observable('FALSE'), watched: true };
+    
     lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
                                                // we'll use ui_motion_line in all the component that would otherwise use motion_line and 
                                                // populate it ourselves with the best value
@@ -629,6 +631,7 @@ define(function (require) {
     lcncsvr.stop = function()
     {
         lcncsvr.abort();
+        lcncsvr.resetClock();
         return;
     }
     
@@ -746,6 +749,7 @@ define(function (require) {
 
     lcncsvr.openFile = function( filename )
     {
+        lcncsvr.resetClock();
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO);
         lcncsvr.sendCommand("program_open","program_open",[filename]);
@@ -1136,7 +1140,11 @@ define(function (require) {
     lcncsvr.downloadChunkGCode = function(requestId, fileIdx, chunkSize) {
         lcncsvr.sendCommand(requestId, "program_download_chunk",[fileIdx, chunkSize]);
     }
-    
+   
+    lcncsvr.resetClock = function(){
+        lcncsvr.sendCommand("reset_clock", "reset_clock", []);
+    }
+
     lcncsvr.sendAllWatchRequests = function (doRequiresFeature) {
         try {
             var id;
