@@ -24,10 +24,6 @@ define(function(require) {
             }
         };
                     
-        self.hssSensorsDetected = ko.computed( function() {
-            return self.linuxCNCServer.vars['halpin_hss_sensors.detected'].data() === 'TRUE';
-        });    
-
 	};
 
 	return ViewModel;
