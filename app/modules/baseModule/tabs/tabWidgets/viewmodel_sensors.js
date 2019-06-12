@@ -60,7 +60,7 @@ define(function(require) {
       return "scale(" + self.chartWidth / self.chartTimespan + ", -" + self.temperatureScaleY() + ")";
     });
     self.temperatureTransformTranslate = ko.computed( function(){
-      return "translate(" + self.chartTimespan + ", -" + self.maxScaleTemperature() + ")";
+      return "translate(" + self.chartTimespan + ", " + (-self.maxScaleTemperature()) + ")";
     });
 
     self.temperatureDisplayUnitsConverter = function() {
@@ -149,7 +149,7 @@ define(function(require) {
       return "scale(" + self.chartWidth / self.chartTimespan + ", -" + self.pressureScaleY() + ")";
     });
     self.pressureTransformTranslate = ko.computed( function(){
-      return "translate(" + self.chartTimespan + ", -" + self.maxPressure() + ")";
+      return "translate(" + self.chartTimespan + ", " + (-self.maxPressure()) + ")";
     });
 
     self.pressureDisplayUnitsConverter = function() {
