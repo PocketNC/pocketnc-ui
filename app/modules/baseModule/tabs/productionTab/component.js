@@ -40,6 +40,22 @@ define(function(require) {
 
         var privateContext = new Boiler.Context();
 
+        moduleContext.getSettings().linuxCNCServer.vars['halpin_hss_sensors.detected'].data.subscribe(function(newval){
+            if(newval)
+            {
+                activateSensorsWidget();
+            }
+        });
+        
+        function activateSensorsWidget (){
+            if (!panel_sensors) {
+                vm_sensors = new ViewModel_sensors(moduleContext, privateContext);
+                panel_sensors = new Boiler.ViewTemplate(panel.getJQueryElement().find("#SENSORS_PANEL"), vm_sensors.getTemplate(), vm_sensors.getNls());
+                ko.applyBindings( vm_sensors, panel_sensors.getDomElement());
+            }
+            vm_sensors.initialize(panel_sensors);
+        }
+
 		return {
 			activate : function(parent) {
 				if (!panel) {
@@ -98,13 +114,6 @@ define(function(require) {
                     ko.applyBindings( vm_gcodes, panel_gcodes.getDomElement());
                 }
                 vm_gcodes.initialize(panel_gcodes);
-
-                if (!panel_sensors) {
-                    vm_sensors = new ViewModel_sensors(moduleContext, privateContext);
-                    panel_sensors = new Boiler.ViewTemplate(panel.getJQueryElement().find("#SENSORS_PANEL"), vm_sensors.getTemplate(), vm_sensors.getNls());
-                    ko.applyBindings( vm_sensors, panel_sensors.getDomElement());
-                }
-                vm_sensors.initialize(panel_sensors);
 
                 /*
                 if (!panel_backplot) {
