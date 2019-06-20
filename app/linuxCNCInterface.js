@@ -269,6 +269,7 @@ define(function (require) {
     lcncsvr.vars.spindlerate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.feedrate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
+    lcncsvr.vars.usb = { data: ko.observableArray([]), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
     lcncsvr.vars.rtc_seconds = { data: ko.observable(0), watched: true };
     lcncsvr.vars.rotary_motion_only = {data: ko.observable('FALSE'), watched: true };
@@ -420,19 +421,13 @@ define(function (require) {
     });
 
     lcncsvr.filename_short = ko.computed( function() {
-        var files = lcncsvr.vars.ls.data();
         var str = lcncsvr.vars.file.data();
+        var parts = str.split('/');
+        str = parts[parts.length-1];
 
-        if(files.indexOf(str) != -1) {
-            var parts = str.split('/');
-            str = parts[parts.length-1];
-
-            if (str.length > 32)
-                return "..." + str.substr( str.length - 29 );
-            return str;
-        }
-
-        return "";
+        if (str.length > 32)
+            return "..." + str.substr( str.length - 29 );
+        return str;
     });
 
     lcncsvr.filename_nopath = ko.computed( function() {
@@ -628,6 +623,17 @@ define(function (require) {
 
     lcncsvr.shutdown_computer = function() {
       lcncsvr.sendCommand("shutdown_computer","shutdown_computer");
+    }
+
+    lcncsvr.eject_usb = function(){
+      console.log('ejecting');
+      lcncsvr.sendCommand("eject_usb", "eject_usb");
+      function ejectListener(event){
+        var msg = JSON.parse(event.data);
+        if(msg.id === "eject_usb")
+          console.log(event);
+      }
+      lcncsvr.socket.addEventListener('message', ejectListener);
     }
 
     lcncsvr.stop = function()

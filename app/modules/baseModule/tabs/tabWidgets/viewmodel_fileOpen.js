@@ -6,10 +6,11 @@ define(function(require) {
 
     var ViewModel = function(moduleContext) {
 
-	var self = this;
+       var self = this;
         
         self.Panel = null;
         self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
+
         
         self.reader = {};
         self.newFile = {};
@@ -90,7 +91,7 @@ define(function(require) {
                         if(msg.code === "?OK"){
                             
                             self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
-                             
+                            
                             if(msg.data === "occupied"){
                                 self.overwrite = true;
                                 $('#fileOverwriteModal').modal('show'); 
@@ -154,7 +155,7 @@ define(function(require) {
                 }
             }
         }
-       
+      
         this.cancelUpload = function(){
             self.isCanceled = true;
             self.isUploading(false);
@@ -170,11 +171,111 @@ define(function(require) {
             var i = size == 0 ? 0 : Math.floor( Math.log(size) / Math.log(1000) );
             return ( size / Math.pow(1000, i) ).toFixed(2) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
         }
-       
+      
         this.updateProgress = function(proportion){
             self.uploadPercent(Math.min((proportion * 100).toFixed(1), 100) + '%');
         }
-        
+
+        this.injectUsb = function( ){
+          var usbDict = self.linuxCNCServer.vars.usb.data().usb;
+          //If there is an existing HTML map of the USB drive, delete it
+          $('#usb-btn-group-list').remove();
+          self.injectDir(usbDict, document.getElementById('usb-btn-group'), "/media/usb/");
+          //KO data-binds in the dynamic content need to be activated
+          ko.applyBindings( self, document.getElementById("usb-btn-group-list"));
+        };
+
+        //This function is used recursively to generate a tree of HTML mapping the USB drive's file strucutre
+        this.injectDir = function( usbDir, parentElement, path){
+          var ul = document.createElement('ul');
+          ul.className = "dropdown-menu";
+          ul.role = "menu";
+          ul.id = parentElement.id + "-list";
+          parentElement.appendChild(ul);
+          for( var item in usbDir ){
+            var li = document.createElement('li');
+            var isItemFile = (usbDir[item] === null);
+            if( isItemFile ){
+              ul.appendChild(li);
+              li.className = "file_hover";
+
+              var a = document.createElement('a');
+              a.style.cssText = "display: inline-block; width: 300px; height: 28px";
+              a.tabindex = "-1";
+              a.text = item;
+              a.addEventListener("click", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.linuxCNCServer.openFile(path + e.currentTarget.text);
+                //collapse the top level list once a file has been selected to open
+                document.getElementById("usb_ul").parentElement.className = "btn-group";
+              });
+              li.appendChild(a);
+            }
+            else if (! jQuery.isEmptyObject(usbDir[item])) {
+              ul.insertBefore(li, ul.firstChild)
+              li.className = "file_hover sub_dir";
+              var dataBindStr = "click: toggleList, clickBubble: false";
+              li.setAttribute("data-bind", dataBindStr);
+
+              var collapseIcon = document.createElement('i');
+              collapseIcon.setAttribute("style", "margin: 5px; display: inline-block");
+              collapseIcon.className = "icon-chevron-right";
+              li.appendChild(collapseIcon);
+              
+              var btn = document.createElement('button');
+              btn.className = "dropdown dir_btn";
+              btn.id = ul.id + "-" + item;
+              btn.innerHTML = item + "";
+              li.appendChild(btn);
+
+              self.injectDir(usbDir[item], btn, path + item + "/");
+            }
+          }
+        };
+
+        this.toggleList = function(data,event,show){
+          var clickedBtn;
+          if(event.target.tagName === "BUTTON")
+            clickedBtn = $("#" + event.target.id);
+          else if(event.target.tagName === "I")
+            clickedBtn = $(event.target).siblings("button");
+          else if(["LI", "SPAN"].indexOf(event.target.tagName) > -1)
+            clickedBtn = $(event.target).children("button");
+          else return;
+
+          dropdownIcon = clickedBtn.prev()[0];
+          if(dropdownIcon.className === "icon-chevron-down"){
+            dropdownIcon.className = "icon-chevron-right";
+          }
+          else{
+            dropdownIcon.className = "icon-chevron-down";
+          }
+          self.collapseSiblingLists(clickedBtn);
+          clickedBtn.children().toggle();
+        };
+
+        this.collapseSiblingLists = function(clickedBtn){
+          var listOfLists  = clickedBtn.parent().siblings(".sub_dir")
+          var i;
+          for(i = 0; i < listOfLists.length; i++){
+            listOfLists[i].children[0].className = "icon-chevron-right";
+            $(listOfLists[i]).children("button").children("ul").toggle(false);
+          }
+        };
+
+        this.linuxCNCServer.vars.usb.data.subscribe(function (newval){
+          self.injectUsb(newval.usb);
+        });
+
+        this.usbDetected = ko.computed(function(){
+          var data = self.linuxCNCServer.vars.usb.data();
+          if( data.length == 0 || !data )
+              return false;
+          
+          return data["detected"];
+        });
+
         this.initialize = function( Panel ) {
             if (self.Panel == null)
             {
@@ -183,12 +284,12 @@ define(function(require) {
 
                 $('#file_input', self.Panel.getJQueryElement()).bind('change', self.testFileSelect );
             }
-	};
+  };
 
 
 
 
-	};
+  };
 
-	return ViewModel;
+  return ViewModel;
 });
