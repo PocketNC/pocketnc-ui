@@ -55,6 +55,7 @@ define({
         "FileOpenTitle": "File Open",
         "SelectNew": "Upload New File",
         "File": "File:",
+        "EjectDetails": "Eject USB drive. Kill system processes accessing it, and unmount it from filesystem. This step should not be needed, but is recommended if your USB drive contains critical data.",
 
         // work offset table titles
         "WorkOffsetTitle": "Work Offsets",

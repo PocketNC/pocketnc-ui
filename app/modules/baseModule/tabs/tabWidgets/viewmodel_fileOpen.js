@@ -177,15 +177,19 @@ define(function(require) {
         }
 
         this.injectUsb = function( ){
-          var usbDict = self.linuxCNCServer.vars.usb.data().usb;
           //If there is an existing HTML map of the USB drive, delete it
           $('#usb-btn-group-list').remove();
-          self.injectDir(usbDict, document.getElementById('usb-btn-group'), "/media/usb/");
+
+          //The map will start in the second level of the object, with a key that starts with "usb" then has a number appended
+          var data = self.linuxCNCServer.vars.usb.data();
+          var usbMap = data.usbMap[Object.keys(data.usbMap)[0]];
+          self.injectDir(usbMap, document.getElementById('usb-btn-group'), "/media/usb/");
+
           //KO data-binds in the dynamic content need to be activated
           ko.applyBindings( self, document.getElementById("usb-btn-group-list"));
         };
 
-        //This function is used recursively to generate a tree of HTML mapping the USB drive's file strucutre
+        //Recursive function to generate a tree of HTML mapping the USB drive's file strucutre
         this.injectDir = function( usbDir, parentElement, path){
           var ul = document.createElement('ul');
           ul.className = "dropdown-menu";
@@ -265,16 +269,26 @@ define(function(require) {
         };
 
         this.linuxCNCServer.vars.usb.data.subscribe(function (newval){
-          self.injectUsb(newval.usb);
+          console.log(newval);
+          if( newval.mounted ){
+            this.usbMounted = true;
+            self.injectUsb(newval.usb);
+          }
+          else{
+            $.pnotify({title: "Alert", text: 'USB drive detected but it failed to mount!', type: "Alert"});
+          }
         });
 
-        this.usbDetected = ko.computed(function(){
+        this.usbMounted = false;
+        
+        /*ko.computed(function(){
           var data = self.linuxCNCServer.vars.usb.data();
           if( data.length == 0 || !data )
               return false;
           
           return data["detected"];
         });
+        */
 
         this.initialize = function( Panel ) {
             if (self.Panel == null)
