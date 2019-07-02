@@ -177,21 +177,42 @@ define(function(require) {
         }
 
         this.injectUsb = function( ){
-          var usbDict = self.linuxCNCServer.vars.usb.data().usb;
+          var usbDict = self.linuxCNCServer.vars.usb.data().usbMap.usb0;
           //If there is an existing HTML map of the USB drive, delete it
-          $('#usb-btn-group-list').remove();
-          self.injectDir(usbDict, document.getElementById('usb-btn-group'), "/media/usb/");
+          $('#usb-dirs').remove();
+          var usbDirs = document.createElement('span');
+          usbDirs.id = "usb-dirs";
+          usbDirs.className = "btn-group";
+          usbDirs.style.display = "contents";
+          $("#file-browser").append(usbDirs);
+          self.injectDir(usbDict, document.getElementById("usb-btn"), "file-list", usbDirs,"/media/usb0/");
           //KO data-binds in the dynamic content need to be activated
-          ko.applyBindings( self, document.getElementById("usb-btn-group-list"));
+          ko.applyBindings( self, document.getElementById("usb-dirs"));
         };
 
-        //This function is used recursively to generate a tree of HTML mapping the USB drive's file strucutre
-        this.injectDir = function( usbDir, parentElement, path){
+        //This function is used recursively to generate a set of UL elements, each listing files and sub-dirs of a dir within the USB drive
+        this.injectDir = function( usbDir, parentBtn, upId, parentElement, path){
           var ul = document.createElement('ul');
-          ul.className = "dropdown-menu";
+          ul.className = "dropdown-menu usb-list";
           ul.role = "menu";
-          ul.id = parentElement.id + "-list";
+          ul.id = parentBtn.id + "-list";
+          ul.setAttribute("style", "display:none");
           parentElement.appendChild(ul);
+
+          var navLi = document.createElement('li');
+          navLi.setAttribute("data-bind", "click:navUp, clickBubble: false")
+          navLi.setAttribute("data-up-id", upId)
+
+          var upIcon = document.createElement('i');
+          upIcon.setAttribute("style", "margin: 5px; display: inline-block");
+          upIcon.className = "icon-chevron-up";
+          navLi.appendChild(upIcon)
+
+          var upBtn = document.createElement('button');
+          upBtn.className = "dropdown dir_btn";
+          upBtn.innerHTML = "..";
+          navLi.appendChild(upBtn);
+          
           for( var item in usbDir ){
             var li = document.createElement('li');
             var isItemFile = (usbDir[item] === null);
@@ -208,14 +229,18 @@ define(function(require) {
                 e.stopPropagation();
                 self.linuxCNCServer.openFile(path + e.currentTarget.text);
                 //collapse the top level list once a file has been selected to open
-                document.getElementById("usb_ul").parentElement.className = "btn-group";
+                $(e.target.closest("ul")).toggle();
+                //remove "open" from the class list of the primary file selection button
+                $("#file-browser")[0].className = "btn-group";
+                //document.getElementById("usb_ul").parentElement.className = "btn-group";
               });
               li.appendChild(a);
             }
             else if (! jQuery.isEmptyObject(usbDir[item])) {
               ul.insertBefore(li, ul.firstChild)
               li.className = "file_hover sub_dir";
-              var dataBindStr = "click: toggleList, clickBubble: false";
+              li.id = ul.id + "-" + item;
+              var dataBindStr = "click: enterDir, clickBubble: false";
               li.setAttribute("data-bind", dataBindStr);
 
               var collapseIcon = document.createElement('i');
@@ -225,13 +250,29 @@ define(function(require) {
               
               var btn = document.createElement('button');
               btn.className = "dropdown dir_btn";
-              btn.id = ul.id + "-" + item;
               btn.innerHTML = item + "";
               li.appendChild(btn);
 
-              self.injectDir(usbDir[item], btn, path + item + "/");
+              self.injectDir(usbDir[item], li, ul.id, document.getElementById('usb-dirs'), path + item + "/");
             }
           }
+          ul.insertBefore(navLi, ul.firstChild);
+        };
+
+        this.enterDir = function(data,event){
+          $(event.target.closest("ul")).hide();
+          var li = event.target.closest("li");
+          var dirId = li.id + "-list";
+          this.currentFileBrowserDir = dirId;
+          $("#" + dirId).toggle();
+        };
+
+        this.navUp = function(data,event){
+          var ul = event.target.closest("ul");
+          $(ul).hide();
+          var navLi = event.target.closest("li");
+          this.currentFileBrowserDir = $(navLi).attr("data-up-id")
+          $("#" + this.currentFileBrowserDir).toggle();
         };
 
         this.toggleList = function(data,event,show){
@@ -264,16 +305,41 @@ define(function(require) {
           }
         };
 
-        this.linuxCNCServer.vars.usb.data.subscribe(function (newval){
-          self.injectUsb(newval.usb);
+        this.currentFileBrowserDir = "file-list";
+
+        this.toggleFileBrowser = function(){
+          $("#" + this.currentFileBrowserDir).toggle();
+        }
+
+        this.linuxCNCServer.vars.usb.data.subscribe(function (data){
+          if( data.length === 0 || !data )
+            self.usbDetected(false);
+          else
+            self.usbDetected(data.mounted);
+
+          self.injectUsb(data.usbMap);
         });
 
-        this.usbDetected = ko.computed(function(){
+        this.usbDetected = ko.observable(false)
+        
+        /*
+        (function(){
           var data = self.linuxCNCServer.vars.usb.data();
-          if( data.length == 0 || !data )
+          if( self.linuxCNCServer.vars.usb.data().length === 0 || !self.linuxCNCServer.vars.usb.data() )
               return false;
           
-          return data["detected"];
+          return self.linuxCNCServer.vars.usb.data().mounted;
+        });
+        */
+
+        //if user clicks outside the lists, fully close the file browser, including styling of primary button
+        $(document).mouseup(function(e){
+          var fileBrowser = $("#file-browser");
+
+          if( !fileBrowser.is(e.target) && fileBrowser.has(e.target).length === 0){
+            $("#" + self.currentFileBrowserDir).hide();
+            $("#file-browser").attr("class", "btn-group");
+          }
         });
 
         this.initialize = function( Panel ) {
