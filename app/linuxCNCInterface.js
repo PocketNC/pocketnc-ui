@@ -626,14 +626,13 @@ define(function (require) {
     }
 
     lcncsvr.eject_usb = function(){
-      console.log('ejecting');
       lcncsvr.sendCommand("eject_usb", "eject_usb");
-      function ejectListener(event){
-        var msg = JSON.parse(event.data);
-        if(msg.id === "eject_usb")
-          console.log(event);
-      }
-      lcncsvr.socket.addEventListener('message', ejectListener);
+      // function ejectListener(event){
+      //   var msg = JSON.parse(event.data);
+      //   if(msg.id === "eject_usb")
+      //     console.log(event);
+      // }
+      // lcncsvr.socket.addEventListener('message', ejectListener);
     }
 
     lcncsvr.stop = function()

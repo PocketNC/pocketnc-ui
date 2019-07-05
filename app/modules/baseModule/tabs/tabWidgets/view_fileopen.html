@@ -86,7 +86,7 @@
                                 <a id="file_list_dropdown" class="btn span12 dropdown-toggle text-center" role="button" data-toggle="dropdown" href="#" data-bind="click:toggleFileBrowser">
                                   <i class="icon-file"></i> <span data-bind="text: linuxCNCServer.filename_short"></span>
                                 </a>
-                                <ul id="file-list" class="dropdown-menu text-left" role="menu" aria-labelledby="file_list_dropdown">
+                                <ul id="local-files" class="dropdown-menu text-left" role="menu" aria-labelledby="file_list_dropdown">
 
                                   <!-- <li id="usb" class="file_hover" data-bind="style: { display: usbDetected() ? 'list-item' : 'none' }">
                                     <span style="display: inline-block; width: 339px;"  data-bind="click: showMenu, clickBubble: false"> -->
@@ -95,7 +95,7 @@
                                     <button id="" class="dropdown dir_btn" role="button">
                                       USB Drive
                                     </button> 
-                                    <a style="margin: 5px; float: right" class="btn btn-default" role="button" title="Eject" data-bind="click: linuxCNCServer.eject_usb">⏏</a>
+                                    <a style="margin: 5px; float: right" class="btn btn-default" role="button" title="Eject" data-bind="click: ejectUsb, clickBubble: false">⏏</a>
                                   </li>
                                   <!-- ko foreach: linuxCNCServer.vars.ls-->
                                     <li class="file_hover">

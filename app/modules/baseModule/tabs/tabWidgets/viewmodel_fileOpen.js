@@ -176,87 +176,129 @@ define(function(require) {
             self.uploadPercent(Math.min((proportion * 100).toFixed(1), 100) + '%');
         }
 
-        this.injectUsb = function( ){
-          var usbDict = self.linuxCNCServer.vars.usb.data().usbMap.usb0;
-          //If there is an existing HTML map of the USB drive, delete it
+
+        this.usbDetected = ko.observable(false);
+        this.currentFileBrowserDir = "local-files";
+
+        this.linuxCNCServer.vars.usb.data.subscribe(function (data){
+          if( data.mountPath ){
+            self.usbDetected(true);
+            self.injectUsb(data);
+          }
+          else
+            self.usbDetected(false);
+        });
+
+        this.injectUsb = function(usbData){
+          //If there is an existing HTML mapping of the USB drive, delete it
           $('#usb-dirs').remove();
+          
+          //Create the parent element for the mapping
           var usbDirs = document.createElement('span');
           usbDirs.id = "usb-dirs";
           usbDirs.className = "btn-group";
           usbDirs.style.display = "contents";
           $("#file-browser").append(usbDirs);
-          self.injectDir(usbDict, document.getElementById("usb-btn"), "file-list", usbDirs,"/media/usb0/");
-          //KO data-binds in the dynamic content need to be activated
+
+          //Begin the mapping. This is a top-down recursive process
+          var topLevelDir = usbData.mountPath.slice(usbData.mountPath.lastIndexOf("/") + 1);
+          self.injectDir(usbData[topLevelDir], document.getElementById("usb-btn"), usbDirs, "local-files", usbData.mountPath);
+          
+          //KO data-binds in the dynamic content need to be activated. 
           ko.applyBindings( self, document.getElementById("usb-dirs"));
         };
 
         //This function is used recursively to generate a set of UL elements, each listing files and sub-dirs of a dir within the USB drive
-        this.injectDir = function( usbDir, parentBtn, upId, parentElement, path){
+        this.injectDir = function( usbDirMap, parentBtn, parentElement, upDirId, pathToDir){
           var ul = document.createElement('ul');
           ul.className = "dropdown-menu usb-list";
           ul.role = "menu";
           ul.id = parentBtn.id + "-list";
           ul.setAttribute("style", "display:none");
           parentElement.appendChild(ul);
-
-          var navLi = document.createElement('li');
-          navLi.setAttribute("data-bind", "click:navUp, clickBubble: false")
-          navLi.setAttribute("data-up-id", upId)
-
-          var upIcon = document.createElement('i');
-          upIcon.setAttribute("style", "margin: 5px; display: inline-block");
-          upIcon.className = "icon-chevron-up";
-          navLi.appendChild(upIcon)
-
-          var upBtn = document.createElement('button');
-          upBtn.className = "dropdown dir_btn";
-          upBtn.innerHTML = "..";
-          navLi.appendChild(upBtn);
           
-          for( var item in usbDir ){
-            var li = document.createElement('li');
-            var isItemFile = (usbDir[item] === null);
+          for( var item in usbDirMap ){
+            var itemLi = document.createElement('li');
+            var isItemFile = (usbDirMap[item] === null);
             if( isItemFile ){
-              ul.appendChild(li);
-              li.className = "file_hover";
+              ul.appendChild(itemLi);
+              itemLi.className = "file_hover";
 
               var a = document.createElement('a');
               a.style.cssText = "display: inline-block; width: 300px; height: 28px";
               a.tabindex = "-1";
               a.text = item;
+              itemLi.appendChild(a);
+
               a.addEventListener("click", function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                self.linuxCNCServer.openFile(path + e.currentTarget.text);
+                self.linuxCNCServer.openFile(pathToDir + "/" + e.currentTarget.text);
                 //collapse the top level list once a file has been selected to open
                 $(e.target.closest("ul")).toggle();
                 //remove "open" from the class list of the primary file selection button
-                $("#file-browser")[0].className = "btn-group";
-                //document.getElementById("usb_ul").parentElement.className = "btn-group";
+                $("#file-browser").attr("class", "btn-group");
               });
-              li.appendChild(a);
             }
-            else if (! jQuery.isEmptyObject(usbDir[item])) {
-              ul.insertBefore(li, ul.firstChild)
-              li.className = "file_hover sub_dir";
-              li.id = ul.id + "-" + item;
+            //only map non-empty sub-dirs
+            else if ( !jQuery.isEmptyObject(usbDirMap[item]) ) { 
+              //put all the sub-dir items at the top of the list
+              ul.prepend(itemLi, ul.firstChild)
+              itemLi.className = "file_hover sub_dir";
+              itemLi.id = ul.id + "-" + item;
+              
               var dataBindStr = "click: enterDir, clickBubble: false";
-              li.setAttribute("data-bind", dataBindStr);
+              itemLi.setAttribute("data-bind", dataBindStr);
 
               var collapseIcon = document.createElement('i');
               collapseIcon.setAttribute("style", "margin: 5px; display: inline-block");
               collapseIcon.className = "icon-chevron-right";
-              li.appendChild(collapseIcon);
+              itemLi.appendChild(collapseIcon);
               
               var btn = document.createElement('button');
               btn.className = "dropdown dir_btn";
               btn.innerHTML = item + "";
-              li.appendChild(btn);
+              itemLi.appendChild(btn);
 
-              self.injectDir(usbDir[item], li, ul.id, document.getElementById('usb-dirs'), path + item + "/");
+              var folderIcon = document.createElement('i');
+              folderIcon.className = "icon-folder-close";
+              btn.prepend(folderIcon);
+
+              self.injectDir(usbDirMap[item], itemLi, document.getElementById('usb-dirs'), ul.id, pathToDir + "/"+ item);
             }
           }
-          ul.insertBefore(navLi, ul.firstChild);
+
+          var navLi = document.createElement('li');
+          navLi.setAttribute("data-bind", "clickBubble: false");
+          
+          var homeBtn = document.createElement('button');
+          homeBtn.className = "icon-home dropdown dir_btn";
+          homeBtn.title = "Home";
+          homeBtn.setAttribute("style", "width: 32px; display: inline-block");
+          homeBtn.setAttribute("data-bind", "click: homeFileBrowser, clickBubble: false")
+          navLi.append(homeBtn);
+
+          var upBtn = document.createElement('button');
+          upBtn.className = "icon-chevron-up dropdown dir_btn";
+          upBtn.title = "Go up one level";
+          upBtn.setAttribute("style", "width: 32px; display: inline-block");
+          upBtn.setAttribute("data-bind", "click: navUp, clickBubble: false");
+          upBtn.setAttribute("data-up-id", upDirId);
+          navLi.append(upBtn);
+
+          var locationSpan = document.createElement('span');
+          locationSpan.title = "Full path: " + pathToDir;
+          locationSpan.setAttribute("style", "width: 300px; height: 28px")
+          var locationText = "USB" + pathToDir.slice("/media/usb0".length);
+          if(locationText.length > 39)
+            locationText = "USB/..." + locationText.substr( locationText.indexOf("/", locationText.length - 36 ) );
+          locationSpan.textContent = locationText;
+          var openFolderIcon = document.createElement('i');
+          openFolderIcon.className = "icon-folder-open";
+          locationSpan.prepend(openFolderIcon);
+          navLi.append(locationSpan);
+
+          ul.prepend(navLi, ul.firstChild);
         };
 
         this.enterDir = function(data,event){
@@ -270,8 +312,8 @@ define(function(require) {
         this.navUp = function(data,event){
           var ul = event.target.closest("ul");
           $(ul).hide();
-          var navLi = event.target.closest("li");
-          this.currentFileBrowserDir = $(navLi).attr("data-up-id")
+          var upBtn = event.target.closest("button");
+          this.currentFileBrowserDir = $(upBtn).attr("data-up-id")
           $("#" + this.currentFileBrowserDir).toggle();
         };
 
@@ -305,32 +347,22 @@ define(function(require) {
           }
         };
 
-        this.currentFileBrowserDir = "file-list";
-
         this.toggleFileBrowser = function(){
           $("#" + this.currentFileBrowserDir).toggle();
+        };
+
+        this.homeFileBrowser = function(){
+          $("#" + this.currentFileBrowserDir).hide();
+          self.currentFileBrowserDir = "local-files";
+          $("#" + this.currentFileBrowserDir).hide();
+          $("#" + this.currentFileBrowserDir).show();
+          $("#file-browser").attr("class", "btn-group open");
+        };
+
+        this.ejectUsb = function(){
+          self.linuxCNCServer.eject_usb();
+          self.homeFileBrowser();
         }
-
-        this.linuxCNCServer.vars.usb.data.subscribe(function (data){
-          if( data.length === 0 || !data )
-            self.usbDetected(false);
-          else
-            self.usbDetected(data.mounted);
-
-          self.injectUsb(data.usbMap);
-        });
-
-        this.usbDetected = ko.observable(false)
-        
-        /*
-        (function(){
-          var data = self.linuxCNCServer.vars.usb.data();
-          if( self.linuxCNCServer.vars.usb.data().length === 0 || !self.linuxCNCServer.vars.usb.data() )
-              return false;
-          
-          return self.linuxCNCServer.vars.usb.data().mounted;
-        });
-        */
 
         //if user clicks outside the lists, fully close the file browser, including styling of primary button
         $(document).mouseup(function(e){
