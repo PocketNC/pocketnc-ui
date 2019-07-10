@@ -6,8 +6,14 @@
             <button class="btn btn-success width-button-larger" data-bind="click: run, disable: linuxCNCServer.RmtRunning"><i class="icon-play"></i> {{nls.RunFrom}}:</button>
             <input type="text" class="input width-line-number" data-bind="value: linuxCNCServer.ui_motion_line">
             <span>&nbsp;</span>
-            <button class="btn btn-primary width-button-larger" data-bind="click: linuxCNCServer.pause,  visible: !linuxCNCServer.vars.paused.data()"><i class="icon-pause"></i> {{nls.Pause}}</button>
-            <button class="btn btn-primary width-button-larger" data-bind="click: function(){resume();}, visible: linuxCNCServer.vars.paused.data">
+            <button 
+              class="btn btn-primary" 
+              data-bind="click: linuxCNCServer.resumeSpindle,  visible: spindlePausedByInterlock(), disable: !interlockClosed()"
+            >
+              <i class="icon-play-circle"></i> {{nls.ResumeSpindle}}
+            </button>
+            <button class="btn btn-primary width-button-larger" data-bind="click: linuxCNCServer.pause,  visible: !linuxCNCServer.vars.paused.data()  && !spindlePausedByInterlock()"><i class="icon-pause"></i> {{nls.Pause}}</button>
+            <button class="btn btn-primary width-button-larger" data-bind="click: function(){resume();}, visible: linuxCNCServer.vars.paused.data() && !spindlePausedByInterlock()">
                 <span data-bind="visible: !singleStep()"><i class="icon-play-circle"></i> {{nls.Resume}}</span>
                 <span data-bind="visible: singleStep"><i class="icon-step-forward"></i> {{nls.Step}}</span>
             </button>

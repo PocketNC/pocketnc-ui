@@ -246,13 +246,25 @@ define(function (require) {
 
     lcncsvr.vars.estop = { data: ko.observable(0), watched: true };
     lcncsvr.vars.task_state = { data: ko.observable(0), watched: true };
+    lcncsvr.vars.task_state.data.subscribe(function(newval){
+      console.log('task_state = ' + newval);
+    });
     lcncsvr.vars.task_mode = { data: ko.observable(0), watched: true };
+    lcncsvr.vars.task_mode.data.subscribe(function(newval){
+      console.log('task_mode = ' + newval);
+    });
     lcncsvr.vars.interp_state = { data: ko.observable(0), watched: true };
+    lcncsvr.vars.interp_state.data.subscribe(function(newval){
+      console.log('interp_state = ' + newval);
+    });
     lcncsvr.vars.queue_full = { data: ko.observable(false), watched: true };
     lcncsvr.vars.paused = { data: ko.observable(false), watched: true };
     lcncsvr.vars.mist =  { data: ko.observable(false), watched: true };
     lcncsvr.vars.flood =  { data: ko.observable(false), watched: true };
     lcncsvr.vars.spindle_enabled = { data: ko.observable(false), watched: true };
+    lcncsvr.vars.spindle_enabled.data.subscribe(function(newval){
+      console.log('spindle_enabled = ' + newval);
+    });
     lcncsvr.vars.spindle_brake = { data: ko.observable(false), watched: true };
     lcncsvr.vars.spindle_speed = { data: ko.observable(0), watched: true };
     lcncsvr.vars.tool_in_spindle = { data: ko.observable(0), watched: true };
@@ -268,6 +280,11 @@ define(function (require) {
     lcncsvr.vars.feedrate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
+    lcncsvr.vars.halsig_interlockClosed = { data: ko.observable('TRUE'), watched: true, requiresFeature: 'INTERLOCK' };
+    lcncsvr.vars.halsig_interlockClosed.data.subscribe( function(newval){
+      console.log(newval)
+    })
+    lcncsvr.vars['halpin_interlock.spindle-paused-by-interlock'] = { data: ko.observable('FALSE'), watched: true, requiresFeature: 'INTERLOCK' };
 
     lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
                                                // we'll use ui_motion_line in all the component that would otherwise use motion_line and 
@@ -590,10 +607,10 @@ define(function (require) {
 
     lcncsvr.pause = function(  )
     {
-        if (lcncsvr.vars.task_mode.data() !== lcncsvr.TASK_MODE_AUTO || ( lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_READING && lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_WAITING ))
-            return;
-        if ( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO))
-            return;
+        // if (lcncsvr.vars.task_mode.data() !== lcncsvr.TASK_MODE_AUTO || ( lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_READING && lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_WAITING ))
+        //     return;
+        // if ( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO))
+        //     return;
         lcncsvr.sendCommand("auto","auto",["AUTO_PAUSE"])
         return;
     }
@@ -613,6 +630,11 @@ define(function (require) {
         return;
     }
 
+    lcncsvr.resumeSpindle = function(){
+        // if( lcncsvr.vars.halsig_interlockClosed.data() === 'TRUE' ){
+        lcncsvr.sendCommand("resume_spindle", "resume_spindle");
+        return;
+    }
 
     lcncsvr.togglePause = function()
     {
@@ -653,6 +675,10 @@ define(function (require) {
             errorText += "interpreter not idle and trajectory planner queue is full"
             isError = true;
         }
+        else if( (lcncsvr.vars.halsig_interlockClosed.data() === 'FALSE') && lcncsvr.doesMdiEnableSpindle(cmd) ){
+          errorText += "spindle cannot be turned on while enclosure is open.";
+          isError = true;
+        }
         if(isError){
             $.pnotify({
                 type: "error",
@@ -664,6 +690,13 @@ define(function (require) {
 
         lcncsvr.sendCommand(id,"mdi",[cmd]);
         return true;
+    }
+
+    lcncsvr.doesMdiEnableSpindle = function( cmd )
+    {
+      var commentlessCmd = cmd.replace(/ *\([^)]*\) */g, '');
+      var hasSCode = ( commentlessCmd.toLowerCase().indexOf('s') !== -1 )
+      return hasSCode
     }
 
     lcncsvr.prepare_for_mdi = function()
@@ -712,6 +745,15 @@ define(function (require) {
     {
         if (!$.isNumeric(rate))
             return;
+        // else if ( (lcncsvr.vars.spindle_enabled.data() ) && (lcncsvr.vars.halsig_interlockClosed.data() === 'FALSE') ){
+        //   $.pnotify({
+        //     type: "error",
+        //     title: "Alert",
+        //     text: "Spindle override rate must remain at 0% while enclosure door is open and spindle is enabled."
+        //   });
+        //   lcncsvr.vars.spindlerate.data.valueHasMutated();
+        //   return;
+        // }
         if (rate < 0)
             rate = 0;
 
@@ -881,6 +923,8 @@ define(function (require) {
 
     lcncsvr.jogCont = function( axisNumber, speed )
     {
+      console.log(lcncsvr.vars.paused.data());
+      console.log(lcncsvr.vars.task_mode.data());
         try {
             speed = speed / 60;
             speed = speed.toFixed(3);

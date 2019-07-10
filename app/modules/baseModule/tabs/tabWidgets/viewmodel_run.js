@@ -86,6 +86,18 @@ define(function(require) {
             return "in";
         });
 
+        self.interlockClosed = ko.computed(function() {
+          if( lcncsvr.vars.halsig_interlockClosed.data() === 'TRUE' )
+            return true
+          else return false
+        });
+
+        self.spindlePausedByInterlock = ko.computed(function() {
+          if( lcncsvr.vars['halpin_interlock.spindle-paused-by-interlock'].data() === 'TRUE' )
+            return true
+          else return false
+        });
+
 	};
 
 	return ViewModel;

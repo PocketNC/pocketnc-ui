@@ -41,6 +41,7 @@ define({
         "RunFrom": "Run From",
         "Pause": "Pause",
         "Resume": "Resume",
+        "ResumeSpindle": "Resume Spindle",
         "Step": "Step",
         "Stop": "Stop",
         "OptionalStop": "Optional Stop",
