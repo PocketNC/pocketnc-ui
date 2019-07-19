@@ -37,10 +37,21 @@ define(function(require) {
 
         self.run = function()
         {
+          if ( self.interlockClosed() ){
             if (self.singleStep())
                 self.linuxCNCServer.runStep();
             else
                 self.linuxCNCServer.runFrom(self.linuxCNCServer.ui_motion_line())
+            return;
+          }
+          else{
+            $.pnotify({
+              type: "warning",
+              title: "Alert",
+              text: "Enclosure door must be closed to run program."
+            });
+            return;
+          }
         };
 
         self.setOptionalStop = function()
