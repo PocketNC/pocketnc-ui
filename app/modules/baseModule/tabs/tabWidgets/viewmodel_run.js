@@ -42,11 +42,22 @@ define(function(require) {
 
         self.run = function()
         {
+          if ( self.interlockClosed() ){
             if (self.singleStep())
                 self.linuxCNCServer.runStep();
             else {
                 self.linuxCNCServer.runFrom(self.linuxCNCServer.ui_motion_line())
             };
+            return;
+          }
+          else{
+            $.pnotify({
+              type: "warning",
+              title: "Alert",
+              text: "Enclosure door must be closed to run program."
+            });
+            return;
+          }
         };
 
         self.setOptionalStop = function()
@@ -59,6 +70,8 @@ define(function(require) {
             if (!self.linuxCNCServer.vars.paused.data())
                 self.linuxCNCServer.pause();
             else {
+                if (self.programPausedByInterlock())
+                    self.linuxCNCServer.interlockRelease();
                 if (self.singleStep())
                     self.linuxCNCServer.runStep();
                 else {
@@ -170,6 +183,18 @@ define(function(require) {
         
         self.spindleRateText = ko.computed( function() {
             return (self.linuxCNCServer.vars.settings.data()[2] * self.linuxCNCServer.vars.spindlerate.data()).toFixed(0);
+        });
+
+        self.interlockClosed = ko.computed(function() {
+          if( lcncsvr.vars.halsig_interlockClosed.data() === 'TRUE' )
+            return true
+          else return false
+        });
+
+        self.programPausedByInterlock = ko.computed(function() {
+          if( lcncsvr.vars['halpin_interlock.program-paused-by-interlock'].data() === 'TRUE' )
+            return true
+          else return false
         });
 
 	};

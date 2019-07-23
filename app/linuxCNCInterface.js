@@ -272,7 +272,9 @@ define(function (require) {
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
     lcncsvr.vars.rtc_seconds = { data: ko.observable(0), watched: true };
     lcncsvr.vars.rotary_motion_only = {data: ko.observable('FALSE'), watched: true };
-    
+    lcncsvr.vars.halsig_interlockClosed = { data: ko.observable('TRUE'), watched: true, requiresFeature: 'INTERLOCK' };
+    lcncsvr.vars['halpin_interlock.program-paused-by-interlock'] = { data: ko.observable('FALSE'), watched: true, requiresFeature: 'INTERLOCK' };
+
     lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
                                                // we'll use ui_motion_line in all the component that would otherwise use motion_line and 
                                                // populate it ourselves with the best value
@@ -617,6 +619,10 @@ define(function (require) {
         return;
     }
 
+    lcncsvr.interlockRelease = function(){
+      lcncsvr.sendCommand("interlock_release", "interlock_release");
+      return;
+    }
 
     lcncsvr.togglePause = function()
     {
@@ -658,9 +664,13 @@ define(function (require) {
             errorText += "interpreter not idle and trajectory planner queue is full"
             isError = true;
         }
+        else if( (lcncsvr.vars.halsig_interlockClosed.data() === 'FALSE') && lcncsvr.doesMdiEnableSpindle(cmd) ){
+          errorText += "spindle cannot be turned on while enclosure is open.";
+          isError = true;
+        }
         if(isError){
             $.pnotify({
-                type: "error",
+                type: "warning",
                 title: "Alert",
                 text: errorText
             });
@@ -669,6 +679,13 @@ define(function (require) {
 
         lcncsvr.sendCommand(id,"mdi",[cmd]);
         return true;
+    }
+
+    lcncsvr.doesMdiEnableSpindle = function( cmd )
+    {
+      var commentlessCmd = cmd.replace(/ *\([^)]*\) */g, '');
+      var hasSCode = ( commentlessCmd.toLowerCase().indexOf('s') !== -1 )
+      return hasSCode
     }
 
     lcncsvr.prepare_for_mdi = function()
