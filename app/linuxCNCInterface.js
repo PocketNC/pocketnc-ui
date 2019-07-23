@@ -269,7 +269,7 @@ define(function (require) {
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
     lcncsvr.vars.halsig_interlockClosed = { data: ko.observable('TRUE'), watched: true, requiresFeature: 'INTERLOCK' };
-    lcncsvr.vars['halpin_interlock.spindle-paused-by-interlock'] = { data: ko.observable('FALSE'), watched: true, requiresFeature: 'INTERLOCK' };
+    lcncsvr.vars['halpin_interlock.program-paused-by-interlock'] = { data: ko.observable('FALSE'), watched: true, requiresFeature: 'INTERLOCK' };
 
     lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
                                                // we'll use ui_motion_line in all the component that would otherwise use motion_line and 
@@ -615,10 +615,9 @@ define(function (require) {
         return;
     }
 
-    lcncsvr.resumeSpindle = function(){
-        // if( lcncsvr.vars.halsig_interlockClosed.data() === 'TRUE' ){
-        lcncsvr.sendCommand("resume_spindle", "resume_spindle");
-        return;
+    lcncsvr.interlockRelease = function(){
+      lcncsvr.sendCommand("interlock_release", "interlock_release");
+      return;
     }
 
     lcncsvr.togglePause = function()

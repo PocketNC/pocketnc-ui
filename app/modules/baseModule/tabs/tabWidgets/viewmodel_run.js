@@ -64,6 +64,8 @@ define(function(require) {
             if (!self.linuxCNCServer.vars.paused.data())
                 self.linuxCNCServer.pause();
             else {
+                if (self.programPausedByInterlock())
+                    self.linuxCNCServer.interlockRelease();
                 if (self.singleStep())
                     self.linuxCNCServer.runStep();
                 else
@@ -103,8 +105,8 @@ define(function(require) {
           else return false
         });
 
-        self.spindlePausedByInterlock = ko.computed(function() {
-          if( lcncsvr.vars['halpin_interlock.spindle-paused-by-interlock'].data() === 'TRUE' )
+        self.programPausedByInterlock = ko.computed(function() {
+          if( lcncsvr.vars['halpin_interlock.program-paused-by-interlock'].data() === 'TRUE' )
             return true
           else return false
         });
