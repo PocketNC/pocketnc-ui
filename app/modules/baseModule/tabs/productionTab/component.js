@@ -40,8 +40,8 @@ define(function(require) {
 
         var privateContext = new Boiler.Context();
 
-        moduleContext.getSettings().linuxCNCServer.vars['halpin_hss_sensors.detected'].data.subscribe(function(newval){
-            if(newval)
+        moduleContext.getSettings().linuxCNCServer.featuresMap.subscribe(function(newval){
+            if(newval.HIGH_SPEED_SPINDLE)
             {
                 activateSensorsWidget();
             }
