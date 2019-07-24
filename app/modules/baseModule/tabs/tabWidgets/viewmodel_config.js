@@ -199,6 +199,34 @@ define(function(require) {
 
             return [];
         });
+        self.swapExists = ko.computed(function() {
+            if(self.linuxCNCServer.vars.system_status.data().swap && self.linuxCNCServer.vars.system_status.data().swap.exists)
+                return self.linuxCNCServer.vars.system_status.data().swap.exists;
+        });
+        self.swapEnabled = ko.computed(function() {
+            if(self.linuxCNCServer.vars.system_status.data().swap && self.linuxCNCServer.vars.system_status.data().swap.on)
+                return self.linuxCNCServer.vars.system_status.data().swap.on;
+        });
+        self.swapStatusText = ko.computed(function(){
+            if(self.swapExists()){
+                if(self.swapEnabled())
+                    return "The swap file is enabled.";
+                else
+                    return "The swap file has not been enabled.";
+            }
+            else
+                return "The swap file has not been created.";
+        });
+        self.swapTooltip = ko.computed(function(){
+            if(self.swapExists()){
+                if(self.swapEnabled())
+                    return "The swap file is in use by the system as additional memory.'";
+                else
+                    return "The swap file has been created, allocated disk space, and given an entry in the file system table, but is not yet enabled for use as memory.";
+            }
+            else
+                return "The swap file will allow your system to use disk space as additional memory.";
+        });
         this.diskAvailable = ko.computed( function() {
             if(self.linuxCNCServer.vars.system_status.data().disk) {
                 return self.linuxCNCServer.vars.system_status.data().disk.available;

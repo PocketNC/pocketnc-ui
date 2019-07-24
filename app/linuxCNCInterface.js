@@ -302,7 +302,7 @@ define(function (require) {
     lcncsvr.vars.board_revision = { data: ko.observable(""), watched: false };
     lcncsvr.vars.dogtag = { data: ko.observable(""), watched: false };
     lcncsvr.vars.system_status = { data: ko.observable(""), watched: false };
-
+    
     lcncsvr.filteredVersions = ko.computed(function() {
         var versions = lcncsvr.vars.versions.data();
         var boardRev = lcncsvr.vars.board_revision.data();
@@ -1080,6 +1080,23 @@ define(function (require) {
     }
     lcncsvr.setCurrentTime = function() {
         lcncsvr.sendCommandWhenReady("set_date", "set_date", [ new Date(Date.now()).toUTCString() ]);
+        lcncsvr.refreshSystemStatus();
+    }
+    lcncsvr.createSwap = function(swapSizeMb) {
+        ssm = swapSizeMb ? swapSizeMb : 256
+        lcncsvr.sendCommandWhenReady("create_swap", "create_swap", [ssm.toString()]);
+        lcncsvr.refreshSystemStatus();
+    }
+    lcncsvr.deleteSwap = function() {
+        lcncsvr.sendCommandWhenReady("delete_swap", "delete_swap", []);
+        lcncsvr.refreshSystemStatus();
+    }
+    lcncsvr.enableSwap = function() {
+        lcncsvr.sendCommandWhenReady("enable_swap", "enable_swap", []);
+        lcncsvr.refreshSystemStatus();
+    }
+    lcncsvr.disableSwap = function() {
+        lcncsvr.sendCommandWhenReady("disable_swap", "disable_swap", []);
         lcncsvr.refreshSystemStatus();
     }
     lcncsvr.clearLogs = function() {
