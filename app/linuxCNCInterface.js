@@ -73,7 +73,6 @@ define(function (require) {
     lcncsvr.vars["halpin_spindle_voltage.speed_measured"] = { data: ko.observable("1"), watched: true };
     lcncsvr.vars["halpin_hss_warmup.full_warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
     lcncsvr.vars["halpin_hss_warmup.warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
-    lcncsvr.vars["halpin_hss_sensors.detected"] = { data: ko.observable("FALSE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
     lcncsvr.vars["halpin_hss_sensors.pressure"] = { data: ko.observable(-999), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
     lcncsvr.vars["halpin_hss_sensors.temperature"] = { data: ko.observable(-999), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
     lcncsvr.vars.pressure_data = { data: ko.observableArray([]), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };

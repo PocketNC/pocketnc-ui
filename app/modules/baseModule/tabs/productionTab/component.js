@@ -40,13 +40,11 @@ define(function(require) {
 
         var privateContext = new Boiler.Context();
 
+        // Need this here because featuresMap sometimes is not assigned when the primary activation occurs.
         moduleContext.getSettings().linuxCNCServer.featuresMap.subscribe(function(newval){
             if(newval.HIGH_SPEED_SPINDLE)
-            {
                 activateSensorsWidget();
-            }
         });
-        
         function activateSensorsWidget (){
             if (!panel_sensors) {
                 vm_sensors = new ViewModel_sensors(moduleContext, privateContext);
@@ -114,6 +112,15 @@ define(function(require) {
                     ko.applyBindings( vm_gcodes, panel_gcodes.getDomElement());
                 }
                 vm_gcodes.initialize(panel_gcodes);
+
+                if(moduleContext.getSettings().linuxCNCServer.featuresMap().HIGH_SPEED_SPINDLE){
+                    if (!panel_sensors) {
+                        vm_sensors = new ViewModel_sensors(moduleContext, privateContext);
+                        panel_sensors = new Boiler.ViewTemplate(panel.getJQueryElement().find("#SENSORS_PANEL"), vm_sensors.getTemplate(), vm_sensors.getNls());
+                        ko.applyBindings( vm_sensors, panel_sensors.getDomElement());
+                    }
+                    vm_sensors.initialize(panel_sensors);
+                  }
 
                 /*
                 if (!panel_backplot) {

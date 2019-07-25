@@ -25,6 +25,10 @@
 .scale-labels{
   font-size: 10px;
 }
+.warning{
+  color: red;
+  text-align: right;
+}
 </style>
 
 <div class="well well-with-label"> 
@@ -34,10 +38,10 @@
         <div class="span12">
           
             <div id="temp" class="sensor">
-              <h5 class="sensor-data">Ambient Temperature: </h5>
+              <h5 class="sensor-data">Main Board Temperature: </h5>
               <span data-bind="text: temperatureText"></span><span> </span><span data-bind="text: linuxCNCServer.TemperatureUnits"></span>
               <div>
-                <svg class="sensor-chart chart" data-bind="attr: { width: chartWidth, height: chartHeight }">
+                <svg class="sensor-chart chart" data-bind="visible: pressureSensorDetected, attr: { width: chartWidth, height: chartHeight }">
                   <!--<text class="tail-text" data-bind="text: temperatureTailText, attr: { x: xCoordTemperatureTailText, y: yCoordTemperatureTailText }">0.01</text>-->
                   <line class="scale" x1="0" x2="0" y1="0" data-bind="attr: { y2: chartHeight }"></line>
                   <g class="scale-labels">
@@ -64,6 +68,7 @@
                   </g>
                   </g>
                 </svg>
+                <div class="warning" data-bind="visible: !temperatureSensorDetected()">Sensor not detected</div>
               </div>
             </div>
 
@@ -73,7 +78,7 @@
               <span data-bind="visible: !isPressureHigh()"><span data-bind="text: pressureText, attr: { color: isPressureHigh() ? 'red' : ''}"></span><span></span><span> </span><span data-bind="text: linuxCNCServer.PressureUnits"</span></span>
               </span>
               <div>
-                <svg class="sensor-chart chart" data-bind="attr: { width: chartWidth, height: chartHeight }">
+                <svg class="sensor-chart chart" data-bind="visible: pressureSensorDetected, attr: { width: chartWidth, height: chartHeight }">
                   <line class="scale" x1="0" x2="0" y1="0" data-bind="attr: { y2: chartHeight }"></line>
                   <g class="scale-labels">
                     <text data-bind="text: minPressure, attr: { x: pressureMinLabelX, y: chartHeight }"></text>
@@ -97,6 +102,7 @@
                   </g>
                   </g>
                </svg>
+               <div class="warning" data-bind="visible: !pressureSensorDetected()">Sensor not detected</div>
               </div>
             </div>
 
