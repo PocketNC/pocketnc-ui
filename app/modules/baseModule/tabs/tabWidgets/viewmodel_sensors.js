@@ -22,12 +22,12 @@ define(function(require) {
  
     self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
 
-    self.sensorReadFailValue = -999
+    self.sensorReadFailValue = "-999"
     
     //--------TEMPERATURE SECTION--------
     //Data from server will always be in Celsius
     self.temperatureSensorDetected = ko.computed( function() {
-      return self.linuxCNCServer.vars["halpin_hss_sensors.temperature"].data() != self.sensorReadFailValue
+      return self.linuxCNCServer.vars["halpin_hss_sensors.temperature"].data() !== self.sensorReadFailValue
     });
 
     self.temperatureInDisplayUnits = function( tData ){
@@ -108,7 +108,7 @@ define(function(require) {
     //--------PRESSURE SECTION--------
     //Data from server will be in MPaA
     self.pressureSensorDetected = ko.computed( function() {
-      return self.linuxCNCServer.vars["halpin_hss_sensors.pressure"].data() != self.sensorReadFailValue
+      return self.linuxCNCServer.vars["halpin_hss_sensors.pressure"].data() !== self.sensorReadFailValue
     });
 
     self.pressureInDisplayUnits = function( pVal ){
