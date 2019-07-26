@@ -664,7 +664,7 @@ define(function (require) {
             errorText += "interpreter not idle and trajectory planner queue is full"
             isError = true;
         }
-        else if( lcncsvr.vars.halsig_interlockClosed.data() === 'FALSE' ){
+        else if( (lcncsvr.vars.halsig_interlockClosed.data() === 'FALSE') && lcncsvr.doesMdiEnableSpindle(cmd) ){
           errorText += "spindle cannot be turned on while enclosure is open.";
           isError = true;
         }
@@ -681,6 +681,13 @@ define(function (require) {
         return true;
     }
 
+    lcncsvr.doesMdiEnableSpindle = function( cmd )
+    {
+      var commentlessCmd = cmd.replace(/ *\([^)]*\) */g, '');
+      var hasSCode = ( commentlessCmd.toLowerCase().indexOf('s') !== -1 )
+      return hasSCode
+    }
+    
     lcncsvr.prepare_for_mdi = function()
     {
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
