@@ -136,7 +136,7 @@ define({
         "IPAddresses" : "IP Addresses",
         "SystemDate" : "System Date and Time",
         "CreateSwap": "Create Swap File",
-        "SwapRequirements": "The created swap file occupies 256MB (7.5%) of disk space. At least 512MB (15%) must be free when creating the swap file.",
+        "SwapInfo": "A swap file is a sector of disk space allocated for use as additional memory.There must be at least 512MB (15%) of free disk space to create the swap file. Once created it will occupy 256MB (7.5%) of disk space.",
         "DeleteSwap": "Delete Swap File",
         "EnableSwap": "Enable Swap File",
         "DisableSwap": "Disable Swap File",

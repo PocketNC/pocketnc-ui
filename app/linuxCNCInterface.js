@@ -445,6 +445,25 @@ define(function (require) {
         return str;
     });
 
+
+    /**
+     * Client Functions
+    */
+    lcncsvr.notifyFromServer = function ( notify ){
+      lcncsvr.notify( notify['type'], notify['title'], notify['text'] );
+    }
+
+    lcncsvr.notify = function ( iType='error', iTitle='Alert', iText=''){
+      iType = iType || 'error';
+      iTitle = iTitle || 'Alert';
+      iText = iText || '';
+      $.pnotify({
+        type: iType,
+        title: iTitle,
+        text: iText
+      });
+     }
+
     /**
      * Server Functions
      */
@@ -1090,21 +1109,19 @@ define(function (require) {
         lcncsvr.refreshSystemStatus();
     }
     lcncsvr.createSwap = function(swapSizeMb) {
-        ssm = swapSizeMb ? swapSizeMb : 256
+        ssm = (swapSizeMb || 256)
         lcncsvr.sendCommandWhenReady("create_swap", "create_swap", [ssm.toString()]);
-        lcncsvr.refreshSystemStatus();
+        //Allocating the disk space can take a number of seconds, occasionally causing a HB to be missed. Refresh if that happens.
+        lcncsvr.needsRefresh = true;
     }
     lcncsvr.deleteSwap = function() {
         lcncsvr.sendCommandWhenReady("delete_swap", "delete_swap", []);
-        lcncsvr.refreshSystemStatus();
     }
     lcncsvr.enableSwap = function() {
         lcncsvr.sendCommandWhenReady("enable_swap", "enable_swap", []);
-        lcncsvr.refreshSystemStatus();
     }
     lcncsvr.disableSwap = function() {
         lcncsvr.sendCommandWhenReady("disable_swap", "disable_swap", []);
-        lcncsvr.refreshSystemStatus();
     }
     lcncsvr.clearLogs = function() {
         lcncsvr.sendCommandWhenReady("clear_logs", "clear_logs", []);
@@ -1296,6 +1313,10 @@ define(function (require) {
             lcncsvr.socket.onmessage = function (msg) {
                 try {
                     var data = JSON.parse(msg.data);
+
+                    if(data.data.notify){
+                      lcncsvr.notifyFromServer(data.data.notify);
+                    }
 
                     if (data.code != "?OK") {
                         console.debug("WEBSOCKET: ERROR code returned " + msg.data);

@@ -199,6 +199,7 @@ define(function(require) {
 
             return [];
         });
+
         self.swapExists = ko.computed(function() {
             if(self.linuxCNCServer.vars.system_status.data().swap && self.linuxCNCServer.vars.system_status.data().swap.exists)
                 return self.linuxCNCServer.vars.system_status.data().swap.exists;
@@ -210,13 +211,14 @@ define(function(require) {
         self.swapStatusText = ko.computed(function(){
             if(self.swapExists()){
                 if(self.swapEnabled())
-                    return "The swap file is enabled.";
+                    return "The swap file has been created and enabled.";
                 else
-                    return "The swap file has not been enabled.";
+                    return "The swap file has been created but is not enabled.";
             }
             else
                 return "The swap file has not been created.";
         });
+        self.swapInfo = nls.SwapInfo;
         self.swapTooltip = ko.computed(function(){
             if(self.swapExists()){
                 if(self.swapEnabled())
@@ -227,6 +229,29 @@ define(function(require) {
             else
                 return "The swap file will allow your system to use disk space as additional memory.";
         });
+
+        self.processingSwapCmd = ko.observable(false);
+
+        //Generic function for manipulating swap so we can listen for server reply and disable buttons in one place
+        this.swapCommand = function( data, event ) {
+          if( !self.processingSwapCmd() ){
+            self.processingSwapCmd(true);
+            var gotCmdResponse = gotSystemStatus = false;
+            function listenForSwapCmdReply(event){
+              var msg = JSON.parse(event.data);
+              gotCmdResponse = gotCmdResponse || msg.data.isSwapCmd;
+              gotSystemStatus = gotSystemStatus || msg.id === 'system_status';
+              if( gotCmdResponse && gotSystemStatus ){
+                self.processingSwapCmd(false);
+                self.linuxCNCServer.socket.removeEventListener('message', listenForSwapCmdReply);
+              }
+            }
+            self.linuxCNCServer.socket.addEventListener('message', listenForSwapCmdReply);
+            self.linuxCNCServer[String(event.target.id)]();
+            self.linuxCNCServer.refreshSystemStatus();
+          }
+        };
+
         this.diskAvailable = ko.computed( function() {
             if(self.linuxCNCServer.vars.system_status.data().disk) {
                 return self.linuxCNCServer.vars.system_status.data().disk.available;
