@@ -317,30 +317,27 @@
               <h4>{{nls.IPAddresses}}</h4>
               <div data-bind="foreach: addresses"><p data-bind="text: $data"></p></div>
 
-              <h4>Swap File</h4>
+              <h4><abbr data-bind="attr: { title: swapInfo }" style="text-decoration: none">Swap File</abbr></h4>
               <div data-bind="style: { display: diskOther() == 100 ? 'none' : '' } ">
-                <div>
-                  <abbr data-bind="text: swapStatusText, attr: { title: swapTooltip}" data-toggle="tooltip"></abbr>
-                </div>
+                <div data-bind="text: swapStatusText, attr: { title: swapTooltip}" data-toggle="tooltip"></div>
                 </br>
                 <div>
                   <span data-bind="style: { display: swapExists() && !swapEnabled() ? '' : 'none' } ">
-                    <button type="button" class="btn btn-danger" data-toggle="modal" data-bind="click: linuxCNCServer.deleteSwap">{{nls.DeleteSwap}}</button>
+                    <button id="deleteSwap" type="button" class="btn btn-danger" data-toggle="modal" data-bind="click: swapCommand, disable: processingSwapCmd">{{nls.DeleteSwap}}</button>
                   </span>
                   <span data-bind="style: { display: swapExists() ? 'none' : '' }, disable: diskAvailable() > 263000 ">
-                    <button type="button" class="btn" data-toggle="modal" data-bind="click: linuxCNCServer.createSwap.bind(this, 256)">{{nls.CreateSwap}}</button>
+                    <button id="createSwap" type="button" class="btn" data-toggle="modal" data-bind="click: swapCommand, disable: processingSwapCmd">{{nls.CreateSwap}}</button>
                   </span>
                   <span data-bind="style: { display: swapExists() && !swapEnabled() ? '' : 'none' } ">
-                    <button type="button" class="btn" data-toggle="modal" data-bind="click: linuxCNCServer.enableSwap">{{nls.EnableSwap}}</button>
+                    <button id="enableSwap" type="button" class="btn" data-toggle="modal" data-bind="click: swapCommand, disable: processingSwapCmd">{{nls.EnableSwap}}</button>
                   </span>
                   <span data-bind="style: { display: swapExists() && swapEnabled() ? '' : 'none' } ">
-                    <button type="button" class="btn btn-danger" data-toggle="modal" data-bind="click: linuxCNCServer.disableSwap">{{nls.DisableSwap}}</button>
+                    <button id="disableSwap" type="button" class="btn btn-danger" data-toggle="modal" data-bind="click: swapCommand, disable: processingSwapCmd">{{nls.DisableSwap}}</button>
                   </span>
+                  <i class="icon icon-spinner icon-spin" data-bind="visible: processingSwapCmd"></i>
                 </div>
-                <small>{{nls.SwapRequirements}}</small>
-                </br>
-
               </div>
+            </br>
               <h4>{{nls.DiskUsage}}</h4>
               <div>
                 <div class="disk_usage_container">
