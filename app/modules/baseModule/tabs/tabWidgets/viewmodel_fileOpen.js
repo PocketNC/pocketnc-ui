@@ -6,10 +6,11 @@ define(function(require) {
 
     var ViewModel = function(moduleContext) {
 
-	var self = this;
+       var self = this;
         
         self.Panel = null;
         self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
+
         
         self.reader = {};
         self.newFile = {};
@@ -90,7 +91,7 @@ define(function(require) {
                         if(msg.code === "?OK"){
                             
                             self.linuxCNCServer.socket.removeEventListener('message', listenMsg);
-                             
+                            
                             if(msg.data === "occupied"){
                                 self.overwrite = true;
                                 $('#fileOverwriteModal').modal('show'); 
@@ -154,7 +155,7 @@ define(function(require) {
                 }
             }
         }
-       
+      
         this.cancelUpload = function(){
             self.isCanceled = true;
             self.isUploading(false);
@@ -170,11 +171,209 @@ define(function(require) {
             var i = size == 0 ? 0 : Math.floor( Math.log(size) / Math.log(1000) );
             return ( size / Math.pow(1000, i) ).toFixed(2) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
         }
-       
+      
         this.updateProgress = function(proportion){
             self.uploadPercent(Math.min((proportion * 100).toFixed(1), 100) + '%');
         }
-        
+
+
+        this.usbDetected = ko.observable(false);
+        this.currentFileBrowserDir = "local-files";
+
+        this.linuxCNCServer.vars.usb.data.subscribe(function (data){
+          if( data.mountPath ){
+            self.usbDetected(true);
+            self.injectUsb(data);
+          }
+          else
+            self.usbDetected(false);
+        });
+
+        this.injectUsb = function(usbData){
+          //If there is an existing HTML mapping of the USB drive, delete it
+          $('#usb-dirs').remove();
+          
+          //Create the parent element for the mapping
+          var usbDirs = document.createElement('span');
+          usbDirs.id = "usb-dirs";
+          usbDirs.className = "btn-group";
+          usbDirs.style.display = "contents";
+          $("#file-browser").append(usbDirs);
+
+          //Begin the mapping. This is a top-down recursive process
+          var topLevelDir = usbData.mountPath.slice(usbData.mountPath.lastIndexOf("/") + 1);
+          self.injectDir(usbData[topLevelDir], document.getElementById("usb-btn"), usbDirs, "local-files", usbData.mountPath);
+          
+          //KO data-binds in the dynamic content need to be activated. 
+          ko.applyBindings( self, document.getElementById("usb-dirs"));
+        };
+
+        //This function is used recursively to generate a set of UL elements, each listing files and sub-dirs of a dir within the USB drive
+        this.injectDir = function( usbDirMap, parentBtn, parentElement, upDirId, pathToDir){
+          var ul = document.createElement('ul');
+          ul.className = "dropdown-menu usb-list";
+          ul.role = "menu";
+          ul.id = parentBtn.id + "-list";
+          ul.setAttribute("style", "display:none");
+          parentElement.appendChild(ul);
+          
+          for( var item in usbDirMap ){
+            var itemLi = document.createElement('li');
+            var isItemFile = (usbDirMap[item] === null);
+            if( isItemFile ){
+              ul.appendChild(itemLi);
+              itemLi.className = "file_hover";
+
+              var a = document.createElement('a');
+              a.style.cssText = "display: inline-block; width: 300px; height: 28px";
+              a.tabindex = "-1";
+              a.text = item;
+              itemLi.appendChild(a);
+
+              a.addEventListener("click", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.linuxCNCServer.openFile(pathToDir + "/" + e.currentTarget.text);
+                //collapse the top level list once a file has been selected to open
+                $(e.target.closest("ul")).toggle();
+                //remove "open" from the class list of the primary file selection button
+                $("#file-browser").attr("class", "btn-group");
+              });
+            }
+            //only map non-empty sub-dirs
+            else if ( !jQuery.isEmptyObject(usbDirMap[item]) ) { 
+              //put all the sub-dir items at the top of the list
+              ul.prepend(itemLi, ul.firstChild)
+              itemLi.className = "file_hover sub_dir";
+              itemLi.id = ul.id + "-" + item;
+              
+              var dataBindStr = "click: enterDir, clickBubble: false";
+              itemLi.setAttribute("data-bind", dataBindStr);
+
+              var collapseIcon = document.createElement('i');
+              collapseIcon.setAttribute("style", "margin: 5px; display: inline-block");
+              collapseIcon.className = "icon-chevron-right";
+              itemLi.appendChild(collapseIcon);
+              
+              var btn = document.createElement('button');
+              btn.className = "dropdown dir_btn";
+              btn.innerHTML = item + "";
+              itemLi.appendChild(btn);
+
+              var folderIcon = document.createElement('i');
+              folderIcon.className = "icon-folder-close";
+              btn.prepend(folderIcon);
+
+              self.injectDir(usbDirMap[item], itemLi, document.getElementById('usb-dirs'), ul.id, pathToDir + "/"+ item);
+            }
+          }
+
+          var navLi = document.createElement('li');
+          navLi.setAttribute("data-bind", "clickBubble: false");
+          
+          var homeBtn = document.createElement('button');
+          homeBtn.className = "icon-home dropdown dir_btn";
+          homeBtn.title = "Home";
+          homeBtn.setAttribute("style", "width: 32px; display: inline-block");
+          homeBtn.setAttribute("data-bind", "click: homeFileBrowser, clickBubble: false")
+          navLi.append(homeBtn);
+
+          var upBtn = document.createElement('button');
+          upBtn.className = "icon-chevron-up dropdown dir_btn";
+          upBtn.title = "Go up one level";
+          upBtn.setAttribute("style", "width: 32px; display: inline-block");
+          upBtn.setAttribute("data-bind", "click: navUp, clickBubble: false");
+          upBtn.setAttribute("data-up-id", upDirId);
+          navLi.append(upBtn);
+
+          var locationSpan = document.createElement('span');
+          locationSpan.title = "Full path: " + pathToDir;
+          locationSpan.setAttribute("style", "width: 300px; height: 28px")
+          var locationText = "USB" + pathToDir.slice("/media/usb0".length);
+          if(locationText.length > 39)
+            locationText = "USB/..." + locationText.substr( locationText.indexOf("/", locationText.length - 36 ) );
+          locationSpan.textContent = locationText;
+          var openFolderIcon = document.createElement('i');
+          openFolderIcon.className = "icon-folder-open";
+          locationSpan.prepend(openFolderIcon);
+          navLi.append(locationSpan);
+
+          ul.prepend(navLi, ul.firstChild);
+        };
+
+        this.enterDir = function(data,event){
+          $(event.target.closest("ul")).hide();
+          var li = event.target.closest("li");
+          var dirId = li.id + "-list";
+          this.currentFileBrowserDir = dirId;
+          $("#" + dirId).toggle();
+        };
+
+        this.navUp = function(data,event){
+          var ul = event.target.closest("ul");
+          $(ul).hide();
+          var upBtn = event.target.closest("button");
+          this.currentFileBrowserDir = $(upBtn).attr("data-up-id")
+          $("#" + this.currentFileBrowserDir).toggle();
+        };
+
+        this.toggleList = function(data,event,show){
+          var clickedBtn;
+          if(event.target.tagName === "BUTTON")
+            clickedBtn = $("#" + event.target.id);
+          else if(event.target.tagName === "I")
+            clickedBtn = $(event.target).siblings("button");
+          else if(["LI", "SPAN"].indexOf(event.target.tagName) > -1)
+            clickedBtn = $(event.target).children("button");
+          else return;
+
+          dropdownIcon = clickedBtn.prev()[0];
+          if(dropdownIcon.className === "icon-chevron-down"){
+            dropdownIcon.className = "icon-chevron-right";
+          }
+          else{
+            dropdownIcon.className = "icon-chevron-down";
+          }
+          self.collapseSiblingLists(clickedBtn);
+          clickedBtn.children().toggle();
+        };
+
+        this.collapseSiblingLists = function(clickedBtn){
+          var listOfLists  = clickedBtn.parent().siblings(".sub_dir")
+          var i;
+          for(i = 0; i < listOfLists.length; i++){
+            listOfLists[i].children[0].className = "icon-chevron-right";
+            $(listOfLists[i]).children("button").children("ul").toggle(false);
+          }
+        };
+
+        this.toggleFileBrowser = function(){
+          $("#" + this.currentFileBrowserDir).toggle();
+        };
+
+        this.homeFileBrowser = function(){
+          $("#" + this.currentFileBrowserDir).hide();
+          self.currentFileBrowserDir = "local-files";
+          $("#" + this.currentFileBrowserDir).hide();
+          $("#" + this.currentFileBrowserDir).show();
+          $("#file-browser").attr("class", "btn-group open");
+        };
+
+        this.ejectUsb = function(){
+          self.linuxCNCServer.eject_usb();
+          self.homeFileBrowser();
+        }
+
+        //if user clicks outside the lists, fully close the file browser, including styling of primary button
+        $(document).mouseup(function(e){
+          var fileBrowser = $("#file-browser");
+
+          if( !fileBrowser.is(e.target) && fileBrowser.has(e.target).length === 0){
+            $("#" + self.currentFileBrowserDir).hide();
+            $("#file-browser").attr("class", "btn-group");
+          }
+        });
+
         this.initialize = function( Panel ) {
             if (self.Panel == null)
             {
@@ -183,12 +382,12 @@ define(function(require) {
 
                 $('#file_input', self.Panel.getJQueryElement()).bind('change', self.testFileSelect );
             }
-	};
+  };
 
 
 
 
-	};
+  };
 
-	return ViewModel;
+  return ViewModel;
 });
