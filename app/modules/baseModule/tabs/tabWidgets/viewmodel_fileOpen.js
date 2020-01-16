@@ -178,11 +178,13 @@ define(function(require) {
 
 
         this.usbDetected = ko.observable(false);
+        this.usbMountPath = "";
         this.currentFileBrowserDir = "local-files";
 
         this.linuxCNCServer.vars.usb.data.subscribe(function (data){
-          if( data.mountPath ){
+          if( data.detected ){
             self.usbDetected(true);
+            self.usbMountPath = data.mountPath;
             self.injectUsb(data);
           }
           else
@@ -372,7 +374,8 @@ define(function(require) {
         };
 
         this.ejectUsb = function(){
-          self.linuxCNCServer.eject_usb();
+          usbSlot = self.usbMountPath[self.usbMountPath.length - 1];
+          self.linuxCNCServer.eject_usb( usbSlot );
           self.homeFileBrowser();
         }
 
