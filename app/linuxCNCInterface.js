@@ -269,7 +269,7 @@ define(function (require) {
     lcncsvr.vars.spindlerate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.feedrate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
-    lcncsvr.vars.usb = { data: ko.observableArray([]), watched: true };
+    lcncsvr.vars.usb = { data: ko.observable(""), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
     lcncsvr.vars.rtc_seconds = { data: ko.observable(0), watched: true };
     lcncsvr.vars.rotary_motion_only = {data: ko.observable('FALSE'), watched: true };
@@ -650,8 +650,8 @@ define(function (require) {
       lcncsvr.sendCommand("shutdown_computer","shutdown_computer");
     }
 
-    lcncsvr.eject_usb = function(){
-      lcncsvr.sendCommand("eject_usb", "eject_usb");
+    lcncsvr.eject_usb = function(usbMountPath){
+      lcncsvr.sendCommand("eject_usb", "eject_usb", [usbMountPath]);
       // function ejectListener(event){
       //   var msg = JSON.parse(event.data);
       //   if(msg.id === "eject_usb")
