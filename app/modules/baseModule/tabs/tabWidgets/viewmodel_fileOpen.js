@@ -220,7 +220,7 @@ define(function(require) {
           parentElement.appendChild(ul);
           
           // We'll increment this everytime a new ul (for a new dir) is added
-          dirId = -1;
+          var dirIdx = -1;
           for( var item in usbDirMap ){
             var isItemFile = (usbDirMap[item] === null);
 
@@ -254,11 +254,11 @@ define(function(require) {
 
               //If a non-empty sub-directory, add to DOM
               else { 
-                dirId++;
+                dirIdx++;
                 //put all the sub-dir items at the top of the list
                 ul.prepend(itemLi);
                 itemLi.className = "file_hover sub_dir";
-                itemLi.id = ul.id + "-sub-dir-" + dirId;
+                itemLi.id = ul.id + "-sub-dir-" + dirIdx;
                 
                 var dataBindStr = "click: enterDir, clickBubble: false";
                 itemLi.setAttribute("data-bind", dataBindStr);
