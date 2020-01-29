@@ -73,9 +73,9 @@ define(function (require) {
     lcncsvr.vars["halpin_spindle_voltage.speed_measured"] = { data: ko.observable("1"), watched: true };
     lcncsvr.vars["halpin_hss_warmup.full_warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
     lcncsvr.vars["halpin_hss_warmup.warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
-    lcncsvr.vars["halpin_hss_sensors.detected"] = { data: ko.observable("FALSE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
-    lcncsvr.vars["halpin_hss_sensors.pressure"] = { data: ko.observable(-999), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
-    lcncsvr.vars["halpin_hss_sensors.temperature"] = { data: ko.observable(-999), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
+    lcncsvr.vars["halpin_hss_warmup.performing_warmup"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
+    lcncsvr.vars["halpin_hss_sensors.pressure"] = { data: ko.observable(""), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
+    lcncsvr.vars["halpin_hss_sensors.temperature"] = { data: ko.observable(""), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
     lcncsvr.vars.pressure_data = { data: ko.observableArray([]), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
     lcncsvr.vars.temperature_data = { data: ko.observableArray([]), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
 
@@ -269,6 +269,7 @@ define(function (require) {
     lcncsvr.vars.spindlerate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.feedrate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
+    lcncsvr.vars.usb = { data: ko.observable(""), watched: true };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
     lcncsvr.vars.rtc_seconds = { data: ko.observable(0), watched: true };
     lcncsvr.vars.rotary_motion_only = {data: ko.observable('FALSE'), watched: true };
@@ -422,19 +423,13 @@ define(function (require) {
     });
 
     lcncsvr.filename_short = ko.computed( function() {
-        var files = lcncsvr.vars.ls.data();
         var str = lcncsvr.vars.file.data();
+        var parts = str.split('/');
+        str = parts[parts.length-1];
 
-        if(files.indexOf(str) != -1) {
-            var parts = str.split('/');
-            str = parts[parts.length-1];
-
-            if (str.length > 32)
-                return "..." + str.substr( str.length - 29 );
-            return str;
-        }
-
-        return "";
+        if (str.length > 32)
+            return "..." + str.substr( str.length - 29 );
+        return str;
     });
 
     lcncsvr.filename_nopath = ko.computed( function() {
@@ -653,6 +648,10 @@ define(function (require) {
 
     lcncsvr.shutdown_computer = function() {
       lcncsvr.sendCommand("shutdown_computer","shutdown_computer");
+    }
+
+    lcncsvr.eject_usb = function(){
+      lcncsvr.sendCommand("eject_usb", "eject_usb");
     }
 
     lcncsvr.stop = function()

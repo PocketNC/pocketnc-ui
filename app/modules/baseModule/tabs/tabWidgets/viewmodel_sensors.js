@@ -21,9 +21,15 @@ define(function(require) {
     self.vertAxisLabelX = -15;
  
     self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
+
+    self.sensorReadFailValue = "-999"
     
     //--------TEMPERATURE SECTION--------
     //Data from server will always be in Celsius
+    self.temperatureSensorDetected = ko.computed( function() {
+      return self.linuxCNCServer.vars["halpin_hss_sensors.temperature"].data() !== self.sensorReadFailValue
+    });
+
     self.temperatureInDisplayUnits = function( tData ){
       tNum = parseFloat(tData);
       if(self.linuxCNCServer.TemperatureUnits() === "F")
@@ -33,6 +39,8 @@ define(function(require) {
     
     self.temperatureText = ko.computed( function() {
       tData = self.linuxCNCServer.vars["halpin_hss_sensors.temperature"].data();
+      if( tData == self.sensorReadFailValue )
+        return "---";
       return self.temperatureInDisplayUnits( tData );
     });
 
@@ -88,7 +96,7 @@ define(function(require) {
     };
 
     self.linuxCNCServer.vars.temperature_data.data.subscribe( function( newval ) {
-        self.processTemperatureData( newval );
+      self.processTemperatureData( newval );
     });
 
     self.linuxCNCServer.TemperatureUnits.subscribe( function() {
@@ -99,6 +107,10 @@ define(function(require) {
 
     //--------PRESSURE SECTION--------
     //Data from server will be in MPaA
+    self.pressureSensorDetected = ko.computed( function() {
+      return self.linuxCNCServer.vars["halpin_hss_sensors.pressure"].data() !== self.sensorReadFailValue
+    });
+
     self.pressureInDisplayUnits = function( pVal ){
       pNum = parseFloat( pVal );
       if( self.linuxCNCServer.PressureUnits() === "PSIA" ){
@@ -111,6 +123,8 @@ define(function(require) {
 
     self.pressureText = ko.computed( function() {
       pData = self.linuxCNCServer.vars["halpin_hss_sensors.pressure"].data();
+      if( pData == self.sensorReadFailValue )
+        return "---";
       return self.pressureInDisplayUnits( pData );
     });
 
@@ -176,7 +190,7 @@ define(function(require) {
     };
 
     self.linuxCNCServer.vars.pressure_data.data.subscribe( function( newval ) {
-        self.processPressureData( newval );
+      self.processPressureData( newval );
     });
 
     self.linuxCNCServer.PressureUnits.subscribe( function() {

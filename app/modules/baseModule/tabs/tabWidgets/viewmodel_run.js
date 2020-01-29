@@ -185,6 +185,22 @@ define(function(require) {
             return (self.linuxCNCServer.vars.settings.data()[2] * self.linuxCNCServer.vars.spindlerate.data()).toFixed(0);
         });
 
+        self.performingWarmup = ko.computed(function() {
+          if( lcncsvr.vars["halpin_hss_warmup.performing_warmup"].data() === 'TRUE' )
+            return true
+          else return false
+        });
+
+        self.pausedWarmupAlert = ko.computed(function() {
+          if( self.performingWarmup() && self.linuxCNCServer.vars.paused.data() ){
+            $.pnotify({
+              type: "warning",
+              title: "Alert",
+              text: "The warmup routine has been paused and will not progress until resumed."
+            });
+          }
+        });
+
         self.interlockClosed = ko.computed(function() {
           if( lcncsvr.vars.halsig_interlockClosed.data() === 'TRUE' )
             return true

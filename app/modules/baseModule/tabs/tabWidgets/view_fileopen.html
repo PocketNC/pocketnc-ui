@@ -16,6 +16,12 @@
 .cancel{
     float: right;
 }
+.dir_btn{
+    border-radius: 4px;
+    text-align: left;
+    height: 32px;
+    margin: 4px;
+}
 </style>
 <div class="well well-with-label">
 
@@ -76,11 +82,33 @@
                     <td>
 
                         <div class="dropdown" >
-                            <div class="btn-group">
-                                <a id="file_list_dropdown" class="btn span12 dropdown-toggle text-center" role="button" data-toggle="dropdown" href="#"><i class="icon-file"></i> <span data-bind="text: linuxCNCServer.filename_short"></span></a>
-                                <ul class="dropdown-menu text-left" role="menu" aria-labelledby="file_list_dropdown" data-bind="foreach: linuxCNCServer.vars.ls">
-                                    <li class="file_hover"><a style="display: inline-block; width: 300px; height: 28px" tabindex="-1" href="#" data-bind="text: $root.linuxCNCServer.stripPath($data), click: function(d){$root.linuxCNCServer.openFile(d);}" ></a> <a style="margin: 5px; display: inline-block" class="btn btn-default" role="button" data-bind="click: function(d) { $('#fileAreYouSureFile').html($root.linuxCNCServer.stripPath(d)); }" data-toggle="modal" data-target="#fileAreYouSureModal"><i class="icon-remove"></i></a></li>
+                            <div  id="file-browser" class="btn-group">
+                                <a id="file_list_dropdown" class="btn span12 dropdown-toggle text-center" role="button" data-toggle="dropdown" href="#" data-bind="click:toggleFileBrowser">
+                                  <i class="icon-file"></i> <span data-bind="text: linuxCNCServer.filename_short"></span>
+                                </a>
+                                <ul id="local-files" class="dropdown-menu text-left" role="menu" aria-labelledby="file_list_dropdown">
+
+                                  <!-- <li id="usb" class="file_hover" data-bind="style: { display: usbDetected() ? 'list-item' : 'none' }">
+                                    <span style="display: inline-block; width: 339px;"  data-bind="click: showMenu, clickBubble: false"> -->
+                                  <li id="usb-btn" class="file_hover" style="display: inline-block; width: 409px;" data-bind="style: { display: usbDetected() ? 'inline-block' : 'none' }, click: enterDir, clickBubble: false">
+                                    <i class="icon-chevron-right" style="margin: 5px; display: inline-block"></i>
+                                    <button id="" class="dropdown dir_btn" role="button">
+                                      USB Drive
+                                    </button> 
+                                    <a style="margin: 5px; float: right" class="btn btn-default" role="button" title="Eject" data-bind="click: ejectUsb, clickBubble: false">⏏</a>
+                                  </li>
+                                  <!-- ko foreach: linuxCNCServer.vars.ls-->
+                                    <li class="file_hover">
+                                      <a style="display: inline-block; width: 300px; height: 28px" tabindex="-1" href="#" data-bind="text: $root.linuxCNCServer.stripPath($data), click: function(d){$root.linuxCNCServer.openFile(d); $root.toggleFileBrowser();}" ></a> 
+                                      <a style="margin: 5px; display: inline-block" class="btn btn-default" role="button" data-bind="click: function(d) { $('#fileAreYouSureFile').html($root.linuxCNCServer.stripPath(d)); }" data-toggle="modal" data-target="#fileAreYouSureModal">
+                                        <i class="icon-remove"></i>
+                                      </a>
+                                    </li>
+                                  <!-- /ko -->
                                 </ul>
+                                <span id="usb-dirs">
+
+                                </span>
                             </div>
                         </div>
 
@@ -111,8 +139,8 @@
                     <button data-bind="click: cancelUpload" id="cancel-btn" type="button" class="btn btn-warning">Cancel</button>
                 </div>
             </div>
-       
-       </div>
+        
+        </div>
     </div>
 
 </div>
