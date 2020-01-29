@@ -650,14 +650,8 @@ define(function (require) {
       lcncsvr.sendCommand("shutdown_computer","shutdown_computer");
     }
 
-    lcncsvr.eject_usb = function(usbMountPath){
-      lcncsvr.sendCommand("eject_usb", "eject_usb", [usbMountPath]);
-      // function ejectListener(event){
-      //   var msg = JSON.parse(event.data);
-      //   if(msg.id === "eject_usb")
-      //     console.log(event);
-      // }
-      // lcncsvr.socket.addEventListener('message', ejectListener);
+    lcncsvr.eject_usb = function(){
+      lcncsvr.sendCommand("eject_usb", "eject_usb");
     }
 
     lcncsvr.stop = function()

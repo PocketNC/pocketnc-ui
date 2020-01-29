@@ -374,8 +374,7 @@ define(function(require) {
         };
 
         this.ejectUsb = function(){
-          usbSlot = self.usbMountPath[self.usbMountPath.length - 1];
-          self.linuxCNCServer.eject_usb( usbSlot );
+          self.linuxCNCServer.eject_usb();
           self.homeFileBrowser();
         }
 
