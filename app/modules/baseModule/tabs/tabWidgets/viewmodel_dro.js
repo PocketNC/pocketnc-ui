@@ -50,7 +50,7 @@ define(function(require) {
         }
 
         self.warmupNeeded = ko.computed(function() {
-            return self.linuxCNCServer.vars['halpin_hss_warmup.warmup_needed'].data() == 'TRUE';
+            return self.linuxCNCServer.vars['halpin_hss_warmup.warmup_needed'].data();
         });
 
         self.spindleSpeed = ko.computed(

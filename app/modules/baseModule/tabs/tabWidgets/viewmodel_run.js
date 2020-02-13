@@ -186,7 +186,7 @@ define(function(require) {
         });
 
         self.performingWarmup = ko.computed(function() {
-          if( lcncsvr.vars["halpin_hss_warmup.performing_warmup"].data() === 'TRUE' )
+          if( lcncsvr.vars["halpin_hss_warmup.performing_warmup"].data() )
             return true
           else return false
         });
@@ -202,13 +202,13 @@ define(function(require) {
         });
 
         self.interlockClosed = ko.computed(function() {
-          if( lcncsvr.vars.halsig_interlockClosed.data() === 'TRUE' )
+          if( lcncsvr.vars.halsig_interlockClosed.data() )
             return true
           else return false
         });
 
         self.programPausedByInterlock = ko.computed(function() {
-          if( lcncsvr.vars['halpin_interlock.program-paused-by-interlock'].data() === 'TRUE' )
+          if( lcncsvr.vars['halpin_interlock.program-paused-by-interlock'].data() )
             return true
           else return false
         });

@@ -71,9 +71,9 @@ define(function (require) {
     lcncsvr.vars.program_units = { data: ko.observable(0), watched: true };
     lcncsvr.vars["halpin_halui.max-velocity.value"] = { data: ko.observable("1"), watched: true };
     lcncsvr.vars["halpin_spindle_voltage.speed_measured"] = { data: ko.observable("1"), watched: true };
-    lcncsvr.vars["halpin_hss_warmup.full_warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
-    lcncsvr.vars["halpin_hss_warmup.warmup_needed"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
-    lcncsvr.vars["halpin_hss_warmup.performing_warmup"] = { data: ko.observable("TRUE"), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
+    lcncsvr.vars["halpin_hss_warmup.full_warmup_needed"] = { data: ko.observable(true), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
+    lcncsvr.vars["halpin_hss_warmup.warmup_needed"] = { data: ko.observable(true), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
+    lcncsvr.vars["halpin_hss_warmup.performing_warmup"] = { data: ko.observable(true), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
     lcncsvr.vars["halpin_hss_sensors.pressure"] = { data: ko.observable(""), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
     lcncsvr.vars["halpin_hss_sensors.temperature"] = { data: ko.observable(""), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
     lcncsvr.vars.pressure_data = { data: ko.observableArray([]), watched: true, requiresFeature: 'HIGH_SPEED_SPINDLE' };
@@ -269,12 +269,16 @@ define(function (require) {
     lcncsvr.vars.spindlerate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.feedrate = { data: ko.observable(1), watched: true };
     lcncsvr.vars.ls = { data: ko.observableArray([]), watched: true };
-    lcncsvr.vars.usb = { data: ko.observable(""), watched: true };
+    lcncsvr.vars.usb_detected = { data: ko.observable(false), watched: true };
+    lcncsvr.vars.usb_detected.data.subscribe(function (newval) {
+      lcncsvr.request_usb_map();
+    });
+    lcncsvr.vars.usb_map = { data: ko.observable(""), watched: false };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
     lcncsvr.vars.rtc_seconds = { data: ko.observable(0), watched: true };
-    lcncsvr.vars.rotary_motion_only = {data: ko.observable('FALSE'), watched: true };
-    lcncsvr.vars.halsig_interlockClosed = { data: ko.observable('TRUE'), watched: true, requiresFeature: 'INTERLOCK' };
-    lcncsvr.vars['halpin_interlock.program-paused-by-interlock'] = { data: ko.observable('FALSE'), watched: true, requiresFeature: 'INTERLOCK' };
+    lcncsvr.vars.rotary_motion_only = {data: ko.observable(false), watched: true };
+    lcncsvr.vars.halsig_interlockClosed = { data: ko.observable(true), watched: true, requiresFeature: 'INTERLOCK' };
+    lcncsvr.vars['halpin_interlock.program-paused-by-interlock'] = { data: ko.observable(false), watched: true, requiresFeature: 'INTERLOCK' };
 
     lcncsvr.ui_motion_line = ko.observable(0); // motion_line gives incorrect values sometimes, settings[0] seems to give better results
                                                // we'll use ui_motion_line in all the component that would otherwise use motion_line and 
@@ -650,6 +654,10 @@ define(function (require) {
       lcncsvr.sendCommand("shutdown_computer","shutdown_computer");
     }
 
+    lcncsvr.request_usb_map = function(){
+      lcncsvr.socket.send(JSON.stringify({"id": "usb_map", "command": "get", "name": "usb_map "}));
+    }
+    
     lcncsvr.eject_usb = function(){
       lcncsvr.sendCommand("eject_usb", "eject_usb");
     }
@@ -682,7 +690,7 @@ define(function (require) {
             errorText += "interpreter not idle and trajectory planner queue is full"
             isError = true;
         }
-        else if( (lcncsvr.vars.halsig_interlockClosed.data() === 'FALSE') && lcncsvr.doesMdiEnableSpindle(cmd) ){
+        else if( (!lcncsvr.vars.halsig_interlockClosed.data()) && lcncsvr.doesMdiEnableSpindle(cmd) ){
           errorText += "spindle cannot be turned on while enclosure is open.";
           isError = true;
         }
@@ -1132,7 +1140,7 @@ define(function (require) {
     }
 
     lcncsvr.warmupSpindle = function() {
-        if(lcncsvr.vars["halpin_hss_warmup.full_warmup_needed"].data() == 'TRUE' )
+        if(lcncsvr.vars["halpin_hss_warmup.full_warmup_needed"].data())
             lcncsvr.mdi("M670");
         else
             lcncsvr.mdi("M671");

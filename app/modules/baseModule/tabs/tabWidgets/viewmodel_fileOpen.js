@@ -181,7 +181,7 @@ define(function(require) {
         this.usbMountPath = "";
         this.currentFileBrowserDir = "local-files";
 
-        this.linuxCNCServer.vars.usb.data.subscribe(function (data){
+        this.linuxCNCServer.vars.usb_map.data.subscribe(function (data){
           if( data.detected ){
             self.usbDetected(true);
             self.usbMountPath = data.mountPath;
@@ -189,6 +189,7 @@ define(function(require) {
           }
           else
             self.usbDetected(false);
+            self.homeFileBrowser();
         });
 
         this.injectUsb = function(usbData){
@@ -218,68 +219,75 @@ define(function(require) {
           ul.id = parentBtn.id + "-list";
           ul.setAttribute("style", "display:none");
           parentElement.appendChild(ul);
-          
-          // We'll increment this everytime a new ul (for a new dir) is added
+
+          // Each directory will be represented by a ul html element, dirIdx is used to generate unique html ids for them
           var dirIdx = -1;
+          // Directories without any .ngc files will have a placeholder li element in their ul
+          var hasNgcFiles = false;
+
           for( var item in usbDirMap ){
             var isItemFile = (usbDirMap[item] === null);
 
-            if ( jQuery.isEmptyObject(usbDirMap[item]) && !isItemFile ) { 
-              // pass, don't need to display empty dirs
+            var itemLi = document.createElement('li');
+
+            if( isItemFile ){
+              hasNgcFiles = true;
+              ul.appendChild(itemLi);
+              itemLi.className = "file_hover";
+
+              var a = document.createElement('a');
+              a.style.cssText = "display: inline-block; width: 300px; height: 28px";
+              a.tabindex = "-1";
+              a.text = item;
+              itemLi.appendChild(a);
+
+              a.addEventListener("click", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.linuxCNCServer.openFile(pathToDir + "/" + e.currentTarget.text);
+                //collapse the top level list once a file has been selected to open
+                $(e.target.closest("ul")).toggle();
+                //remove "open" from the class list of the primary file selection button
+                $("#file-browser").attr("class", "btn-group");
+              });
             }
-            else {
-              var itemLi = document.createElement('li');
+            else { 
+              dirIdx++;
+              //put all the sub-dir items at the top of the list
+              ul.prepend(itemLi);
+              itemLi.className = "file_hover sub_dir";
+              itemLi.id = ul.id + "-sub-dir-" + dirIdx;
+              
+              var dataBindStr = "click: enterDir, clickBubble: false";
+              itemLi.setAttribute("data-bind", dataBindStr);
 
-              //If a file, add to the DOM.
-              if( isItemFile ){
-                ul.appendChild(itemLi);
-                itemLi.className = "file_hover";
+              var collapseIcon = document.createElement('i');
+              collapseIcon.setAttribute("style", "margin: 5px; display: inline-block");
+              collapseIcon.className = "icon-chevron-right";
+              itemLi.appendChild(collapseIcon);
+              
+              var btn = document.createElement('button');
+              btn.className = "dropdown dir_btn";
+              btn.innerHTML = item + "";
+              itemLi.appendChild(btn);
 
-                var a = document.createElement('a');
-                a.style.cssText = "display: inline-block; width: 300px; height: 28px";
-                a.tabindex = "-1";
-                a.text = item;
-                itemLi.appendChild(a);
+              var folderIcon = document.createElement('i');
+              folderIcon.className = "icon-folder-close";
+              btn.prepend(folderIcon);
 
-                a.addEventListener("click", function(e) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  self.linuxCNCServer.openFile(pathToDir + "/" + e.currentTarget.text);
-                  //collapse the top level list once a file has been selected to open
-                  $(e.target.closest("ul")).toggle();
-                  //remove "open" from the class list of the primary file selection button
-                  $("#file-browser").attr("class", "btn-group");
-                });
-              }
-
-              //If a non-empty sub-directory, add to DOM
-              else { 
-                dirIdx++;
-                //put all the sub-dir items at the top of the list
-                ul.prepend(itemLi);
-                itemLi.className = "file_hover sub_dir";
-                itemLi.id = ul.id + "-sub-dir-" + dirIdx;
-                
-                var dataBindStr = "click: enterDir, clickBubble: false";
-                itemLi.setAttribute("data-bind", dataBindStr);
-
-                var collapseIcon = document.createElement('i');
-                collapseIcon.setAttribute("style", "margin: 5px; display: inline-block");
-                collapseIcon.className = "icon-chevron-right";
-                itemLi.appendChild(collapseIcon);
-                
-                var btn = document.createElement('button');
-                btn.className = "dropdown dir_btn";
-                btn.innerHTML = item + "";
-                itemLi.appendChild(btn);
-
-                var folderIcon = document.createElement('i');
-                folderIcon.className = "icon-folder-close";
-                btn.prepend(folderIcon);
-
-                self.injectDir(usbDirMap[item], itemLi, document.getElementById('usb-dirs'), ul.id, pathToDir + "/"+ item);
-              }
+              self.injectDir(usbDirMap[item], itemLi, document.getElementById('usb-dirs'), ul.id, pathToDir + "/"+ item);
             }
+          }
+
+          if( ! hasNgcFiles ){
+            var noFilesLi = document.createElement('li');
+            ul.appendChild(noFilesLi);
+            noFilesLi.className = "file_hover";
+            var a = document.createElement('a');
+            a.style.cssText = "display: inline-block; width: 300px; height: 28px";
+            a.tabindex = "-1";
+            a.text = "No .ngc files in this directory";
+            noFilesLi.appendChild(a);
           }
 
           var navLi = document.createElement('li');
