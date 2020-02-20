@@ -42,7 +42,7 @@ define(function(require) {
 
         self.run = function()
         {
-          if ( self.interlockClosed() ){
+          if ( self.linuxCNCServer.vars.halsig_interlockClosed.data() ){
             if (self.singleStep())
                 self.linuxCNCServer.runStep();
             else {
@@ -185,10 +185,9 @@ define(function(require) {
             return (self.linuxCNCServer.vars.settings.data()[2] * self.linuxCNCServer.vars.spindlerate.data()).toFixed(0);
         });
 
+        //Returns True or False, using this structure to avoid nested quotes in HTML
         self.performingWarmup = ko.computed(function() {
-          if( lcncsvr.vars["halpin_hss_warmup.performing_warmup"].data() )
-            return true
-          else return false
+          return lcncsvr.vars['halpin_hss_warmup.performing_warmup'].data();
         });
 
         self.pausedWarmupAlert = ko.computed(function() {
@@ -201,16 +200,9 @@ define(function(require) {
           }
         });
 
-        self.interlockClosed = ko.computed(function() {
-          if( lcncsvr.vars.halsig_interlockClosed.data() )
-            return true
-          else return false
-        });
-
+        //Returns True or False, using this structure to avoid nested quotes in HTML
         self.programPausedByInterlock = ko.computed(function() {
-          if( lcncsvr.vars['halpin_interlock.program-paused-by-interlock'].data() )
-            return true
-          else return false
+          return lcncsvr.vars['halpin_interlock.program-paused-by-interlock'].data();
         });
 
 	};

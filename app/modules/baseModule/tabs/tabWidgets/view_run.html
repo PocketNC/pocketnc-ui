@@ -13,11 +13,11 @@
   <span class="well-label">{{nls.RunTitle}}</span>
 
   <p class="form-inline">
-    <button class="btn btn-success width-button-larger" data-bind="click: run, disable: linuxCNCServer.RmtRunning() || !interlockClosed() || performingWarmup()"><i class="icon-play"></i> {{nls.RunFrom}}:</button>
+    <button class="btn btn-success width-button-larger" data-bind="click: run, disable: linuxCNCServer.RmtRunning() || !linuxCNCServer.vars.halsig_interlockClosed.data() || performingWarmup()"><i class="icon-play"></i> {{nls.RunFrom}}:</button>
     <input type="text" class="input width-line-number" data-bind="value: linuxCNCServer.ui_motion_line">
     <span>&nbsp;</span>
     <button class="btn btn-primary width-button-larger" data-bind="click: linuxCNCServer.pause,  visible: !linuxCNCServer.vars.paused.data()"><i class="icon-pause"></i> {{nls.Pause}}</button>
-    <button class="btn btn-primary width-button-larger" data-bind="click: function(){resume();}, visible: linuxCNCServer.vars.paused.data(), disable: !interlockClosed()">
+    <button class="btn btn-primary width-button-larger" data-bind="click: function(){resume();}, visible: linuxCNCServer.vars.paused.data(), disable: !linuxCNCServer.vars.halsig_interlockClosed.data()">
 
         <span data-bind="visible: !singleStep()"><i class="icon-play-circle"></i> {{nls.Resume}}</span>
         <span data-bind="visible: singleStep"><i class="icon-step-forward"></i> {{nls.Step}}</span>
