@@ -331,7 +331,7 @@ define(function(require) {
 
         this.launchServerConfig = function()
         {
-            window.open( "http://" + self.linuxCNCServer.server_address() + ":" + self.linuxCNCServer.server_port(), "Linux CNC Server Configuration Website", "height=700,width=1024,scrollbars=yes,resizable=1,location=no,status=no,toolbar=no");
+            window.open( "http://" + self.linuxCNCServer.server_address() + ":" + self.linuxCNCServer.server_port(),'_blank');
         }
 
         this.launchServerHelp = function()

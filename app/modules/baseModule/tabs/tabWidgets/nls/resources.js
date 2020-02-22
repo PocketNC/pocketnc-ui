@@ -150,7 +150,7 @@ define({
         "AreYouSureNCFilesShort" : "Clear all G Code files?",
 
         "ServerConfigLabel": "Linux CNC Server Web Configuration",
-        "Launch" : "Launch In New Window",
+        "Launch" : "Launch In New Tab",
 
 
         "HostIP" : "Host IP Address",
