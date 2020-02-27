@@ -188,6 +188,7 @@ define({
         "JogStep1Label" : "Incremental Jog Distance 1",
         "JogStep2Label" : "Incremental Jog Distance 2",
         "JogStep3Label" : "Incremental Jog Distance 3",
+        "JogStep4Label" : "Incremental Jog Distance 4",
 
         "DialogClose" : "Close",
 

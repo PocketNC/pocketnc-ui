@@ -69,6 +69,7 @@ define(['./linuxCNCInterface.js', './core/helpers/utility.js'], function(linuxcn
     settings.addPersistentSetting("JogStep1", 0.001,true );
     settings.addPersistentSetting("JogStep2", 0.01,true );
     settings.addPersistentSetting("JogStep3", 0.1,true );
+    settings.addPersistentSetting("JogStep4", 1,true );
 
     settings.addPersistentSetting("ToolTableDescriptions", [], true);
 

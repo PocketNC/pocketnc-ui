@@ -924,7 +924,8 @@ define(function (require) {
     {
         try {
             lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MANUAL);
-            lcncsvr.sendCommand( "JOG", "jog", ["JOG_INCREMENT", axisNumber, lcncsvr.jog_speed_fast(), dist ])
+            distMachineUnits = lcncsvr.DisplayUnitsToMachineUnits(dist);
+            lcncsvr.sendCommand( "JOG", "jog", ["JOG_INCREMENT", axisNumber, lcncsvr.jog_speed_fast(), distMachineUnits ])
         } catch(ex){}
     };
 

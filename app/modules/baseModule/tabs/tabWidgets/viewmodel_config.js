@@ -40,6 +40,7 @@ define(function(require) {
             self.settings.persist.JogStep1.SaveScratch();
             self.settings.persist.JogStep2.SaveScratch();
             self.settings.persist.JogStep3.SaveScratch();
+            self.settings.persist.JogStep4.SaveScratch();
 
         }
 
@@ -50,6 +51,7 @@ define(function(require) {
             self.settings.persist.JogStep1.ResetScratch();
             self.settings.persist.JogStep2.ResetScratch();
             self.settings.persist.JogStep3.ResetScratch();
+            self.settings.persist.JogStep4.ResetScratch();
         }
 
         // *** Display Settings
