@@ -844,3 +844,21 @@ fieldset {
 .sliders-vertical .ui-slider {
   margin: 0;
 }
+
+
+.hotkey {
+  color: grey;
+  width: 25px;
+  border: 2px solid grey;
+  text-align: center;
+  font-weight: bold;
+}
+.bold{
+  font-weight: bold;
+}
+.underline{
+  text-decoration: underline;
+}
+.border-bottom {
+  border-bottom:1px solid black;
+}

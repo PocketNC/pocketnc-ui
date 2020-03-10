@@ -235,62 +235,118 @@
 
             <!--************************ JOG SETTINGS ************************-->
             <div class="tab-pane" id="JogSettings">
+              <div class="row-fluid">
+                <div class="left-col form-horizontal">
+                  <legend>{{nls.JogTabLegend}}</legend>
+                  <form>
 
-                <legend>{{nls.JogTabLegend}}</legend>
-
-                <form class="form-horizontal">
-
-                    <div class="control-group">
-                        <label class="control-label" for="inputJogSlow">{{nls.JogSlowLabel}}</label>
-                        <div class="controls">
-                            <input spellcheck='false' id="inputJogSlow" type="text" data-bind="value: settings.persist.JogFeedSlow.Scratch" >
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label class="control-label" for="inputJogFast">{{nls.JogFastLabel}}</label>
-                        <div class="controls">
-                            <input spellcheck='false' id="inputJogFast" type="text" data-bind="value: settings.persist.JogFeedFast.Scratch" >
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label class="control-label" for="inputJogStep1">{{nls.JogStep1Label}}</label>
-                        <div class="controls">
-                            <input spellcheck='false' id="inputJogStep1" type="text" data-bind="value: settings.persist.JogStep1.Scratch" >
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label class="control-label" for="inputJogStep2">{{nls.JogStep2Label}}</label>
-                        <div class="controls">
-                            <input spellcheck='false' id="inputJogStep2" type="text" data-bind="value: settings.persist.JogStep2.Scratch" >
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label class="control-label" for="inputJogStep3">{{nls.JogStep3Label}}</label>
-                        <div class="controls">
-                            <input spellcheck='false' id="inputJogStep3" type="text" data-bind="value: settings.persist.JogStep3.Scratch" >
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                      <label class="control-label" for="inputJogStep4">{{nls.JogStep4Label}}</label>
-                      <div class="controls">
-                          <input spellcheck='false' id="inputJogStep4" type="text" data-bind="value: settings.persist.JogStep4.Scratch" >
+                      <div class="control-group">
+                          <label class="control-label" for="inputJogSlow">{{nls.JogSlowLabel}}</label>
+                          <div class="controls">
+                              <input spellcheck='false' id="inputJogSlow" type="text" data-bind="value: settings.persist.JogFeedSlow.Scratch" >
+                          </div>
                       </div>
-                    </div>
 
-                    <div class="control-group">
+                      <div class="control-group">
+                          <label class="control-label" for="inputJogFast">{{nls.JogFastLabel}}</label>
+                          <div class="controls">
+                              <input spellcheck='false' id="inputJogFast" type="text" data-bind="value: settings.persist.JogFeedFast.Scratch" >
+                          </div>
+                      </div>
+
+                      <div class="control-group">
+                          <label class="control-label" for="inputJogStep1">{{nls.JogStep1Label}}</label>
+                          <div class="controls">
+                              <input spellcheck='false' id="inputJogStep1" type="text" data-bind="value: settings.persist.JogStep1.Scratch" >
+                          </div>
+                      </div>
+
+                      <div class="control-group">
+                          <label class="control-label" for="inputJogStep2">{{nls.JogStep2Label}}</label>
+                          <div class="controls">
+                              <input spellcheck='false' id="inputJogStep2" type="text" data-bind="value: settings.persist.JogStep2.Scratch" >
+                          </div>
+                      </div>
+
+                      <div class="control-group">
+                          <label class="control-label" for="inputJogStep3">{{nls.JogStep3Label}}</label>
+                          <div class="controls">
+                              <input spellcheck='false' id="inputJogStep3" type="text" data-bind="value: settings.persist.JogStep3.Scratch" >
+                          </div>
+                      </div>
+
+                      <div class="control-group">
+                        <label class="control-label" for="inputJogStep4">{{nls.JogStep4Label}}</label>
                         <div class="controls">
-                            <button class="btn" data-bind="click: refreshJogSettings">{{nls.Refresh}}</button>
-                            <button class="btn" data-bind="click: saveJogSettings">{{nls.Save}}</button>
+                            <input spellcheck='false' id="inputJogStep4" type="text" data-bind="value: settings.persist.JogStep4.Scratch" >
                         </div>
+                      </div>
+
+                      <div class="control-group">
+                          <div class="controls">
+                              <button class="btn" data-bind="click: refreshJogSettings">{{nls.Refresh}}</button>
+                              <button class="btn" data-bind="click: saveJogSettings">{{nls.Save}}</button>
+                          </div>
+                      </div>
+
+                  </form>
+                </div>
+
+                <div class="fixed-fluid">
+                  <legend>{{nls.JogTabControlsSectionTitle}}</legend>
+                  <div>
+                  <div class="row-fluid">
+                    <div class="left-col">
+                      <table>
+                        <tr class="border-bottom" >
+                          <th style="width: 35px">Axis</th>
+                          <th style="width: 32px"><i class="icon-minus" style="opacity: 1.0;"></i></th>
+                          <th style="width: 32px"><i class="icon-plus" style="opacity: 1.0;"></i></th>
+                        </tr>
+                      </table>
+                      <table style="border-collapse: separate; border-spacing: 5px">
+                        <tr>
+                          <td style="width: 25px;">X:</td>
+                          <td class="hotkey"><i class="icon-arrow-left"></i></td>
+                          <td class="hotkey"><i class="icon-arrow-right"></i></td>
+                        </tr>
+                        <tr>
+                          <td style="width: 25px;">Y:</td>
+                          <td class="hotkey"><i class="icon-arrow-down"></i></td>
+                          <td class="hotkey"><i class="icon-arrow-up"></i></td>
+                        </tr>
+                        <tr>
+                          <td style="width: 25px;">Z:</td>
+                          <td class="hotkey">Z</td>
+                          <td class="hotkey ">X</td>
+                        </tr>
+                        <tr>
+                          <td style="width: 25px;">A:</td>
+                          <td class="hotkey ">A</td>
+                          <td class="hotkey ">S</td>
+                        </tr>
+                        <tr>
+                          <td style="width: 25px;">B:</td>
+                          <td class="hotkey ">B</td>
+                          <td class="hotkey ">N</td>
+                        </tr>
+                      </table>
+                      </br>
+                      <div class="bold underline">Slow Jog</div>
+                      <div><span class="hotkey"> Shift </span> + Axis Key</div>
+                      </br>
+                      <div class="bold underline">Incremental Jog</div>
+                      <div><span class="hotkey" style="display: inline-block;"> Alt </span> + Axis Key</div>
+                      </br>
+                      <div class="bold underline">As selected in Jog panel</div>
+                      <div><span class="hotkey" style="display: inline-block;"> + </span> or <span class="hotkey" style="display: inline-block;"> - </span> Key</div>
                     </div>
+                  </div>
+                </div>
 
-                </form>
+                </div>
 
+              </div>
             </div>
 
 
