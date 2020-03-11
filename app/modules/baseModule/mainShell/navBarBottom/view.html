@@ -41,12 +41,14 @@
                     <!--</a>-->
                 <!--</li>-->
 
-                <li title="These values are in display units">
+                <li>
                     <div style="position: fixed; top: 0px; left: 0px; width: 1px; height: 1px;" id="jog_focus_handler" tabindex="1" data-bind="hasfocus: jogging"></div>
 
-                    <div class="btn-group dropup">
-                        <div class="input-prepend input-append">
-                            <button class="btn dropdown-toggle btn-primary" data-bind="css: {'btn-primary': (!jogging() || linuxCNCServer.RmtRunning()), 'btn-warning': (jogging() && !linuxCNCServer.RmtRunning())} " data-toggle="dropdown" >
+                    <div class="btn-group dropup" >
+                        <div class="input-prepend input-append" >
+                            <button class="btn dropdown-toggle btn-primary" 
+                                  data-bind="css: {'btn-primary': (!jogging() || linuxCNCServer.RmtRunning()), 'btn-warning': (jogging() && !linuxCNCServer.RmtRunning())} " 
+                                  data-toggle="dropdown">
                                 <span class="caret white-caret" ></span>
                             </button>
                             <ul class="dropdown-menu">
@@ -54,9 +56,11 @@
                               <li><a data-bind="click: function(){ settings.persist.JogStep(settings.persist.JogStep2()); }">{{nls.jog_step}}<span data-bind="text: (settings.persist.JogStep2())"></span></a></li>
                               <li><a data-bind="click: function(){ settings.persist.JogStep(settings.persist.JogStep3()); }">{{nls.jog_step}}<span data-bind="text: (settings.persist.JogStep3())"></span></a></li>
                               <li><a data-bind="click: function(){ settings.persist.JogStep(settings.persist.JogStep4()); }">{{nls.jog_step}}<span data-bind="text: (settings.persist.JogStep4())"></span></a></li>
+                              <li><i class="icon-cog"></i><span><small class="font-weight-light font-italic"><em>{{nls.jogging_values_info_1}}</br>{{nls.jogging_values_info_2}}</em></small></span></a></li>
                             </ul>
-                            <button class="btn dropdown-toggle" data-bind="css: {'btn-primary': (!jogging() || linuxCNCServer.RmtRunning()), 'btn-warning': (jogging() && !linuxCNCServer.RmtRunning())} " data-toggle="dropdown" >
-                                <span >{{nls.jogging}}</span>
+                            <button class="btn dropdown-toggle" data-bind="css: {'btn-primary': (!jogging() || linuxCNCServer.RmtRunning()), 'btn-warning': (jogging() && !linuxCNCServer.RmtRunning())} " 
+                                    data-toggle="dropdown" title="This button turns orange to indicate readiness to capture keyboard input and issue jog commands." >
+                                <span >{{nls.jogging_indicator}}</span>
                             </button>
                         </div>
                     </div>

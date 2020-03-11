@@ -21,7 +21,10 @@ define({
         "display_units": "Display: ",
 
         "mdiExecute": "MDI",
-        "jogging" : "Jog",
+        "jogging_indicator_info" : "This button turns orange to indicate readiness to ",
+        "jogging_values_info_1" : "These values can be set in the",
+        "jogging_values_info_2" : "Config page's Jogging sub-tab",
+        "jogging_indicator" : "Keyboard Jogging",
         "jog_step" : "Set Jog Step To "
 
     }
