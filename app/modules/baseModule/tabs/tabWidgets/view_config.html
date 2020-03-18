@@ -320,7 +320,7 @@
                           <td class="hotkey">Z</td>
                           <td class="hotkey ">X</td>
                         </tr>
-                        <tr>
+                        <tr data-bind="visible: linuxCNCServer.AxesNumbers().includes(3)">
                           <td style="width: 25px;">A:</td>
                           <td class="hotkey ">A</td>
                           <td class="hotkey ">S</td>
@@ -329,6 +329,11 @@
                           <td style="width: 25px;">B:</td>
                           <td class="hotkey ">B</td>
                           <td class="hotkey ">N</td>
+                        </tr>
+                        <tr data-bind="visible: linuxCNCServer.AxesNumbers().includes(5)">
+                          <td style="width: 25px;">C:</td>
+                          <td class="hotkey ">C</td>
+                          <td class="hotkey ">V</td>
                         </tr>
                       </table>
                       </br>
