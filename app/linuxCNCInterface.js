@@ -614,9 +614,7 @@ define(function (require) {
 
     lcncsvr.pause = function(  )
     {
-        if (lcncsvr.vars.task_mode.data() !== lcncsvr.TASK_MODE_AUTO || ( lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_READING && lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_WAITING ))
-            return;
-        if ( !lcncsvr.setRmtMode(lcncsvr.TASK_MODE_AUTO))
+        if ( lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_READING && lcncsvr.vars.interp_state.data() !== lcncsvr.TASK_INTERP_WAITING )
             return;
         lcncsvr.sendCommand("auto","auto",["AUTO_PAUSE"])
         return;
