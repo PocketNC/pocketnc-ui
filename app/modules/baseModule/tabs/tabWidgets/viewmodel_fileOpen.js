@@ -374,11 +374,17 @@ define(function(require) {
         };
 
         this.homeFileBrowser = function(){
-          $("#" + this.currentFileBrowserDir).hide();
+          var wasOpen = false;
+          if( $("#" + this.currentFileBrowserDir).is(':visible') ){
+            wasOpen = true;
+            $("#" + this.currentFileBrowserDir).hide();
+          }
           self.currentFileBrowserDir = "local-files";
-          $("#" + this.currentFileBrowserDir).hide();
-          $("#" + this.currentFileBrowserDir).show();
-          $("#file-browser").attr("class", "btn-group open");
+          if( wasOpen){
+            $("#" + this.currentFileBrowserDir).hide();
+            $("#" + this.currentFileBrowserDir).show();
+            $("#file-browser").attr("class", "btn-group open");
+          }
         };
 
         this.ejectUsb = function(){
