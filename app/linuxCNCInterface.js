@@ -304,7 +304,6 @@ define(function (require) {
 
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
     lcncsvr.vars.current_version = { data: ko.observable("").extend({withScratch:true}), watched: false };
-    lcncsvr.vars.github_connection = { data: ko.observable(false), watched: true };
     lcncsvr.vars.board_revision = { data: ko.observable(""), watched: false };
     lcncsvr.vars.dogtag = { data: ko.observable(""), watched: false };
     lcncsvr.vars.system_status = { data: ko.observable(""), watched: false };
