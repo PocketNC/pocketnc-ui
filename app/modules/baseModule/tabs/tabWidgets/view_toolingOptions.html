@@ -1,0 +1,35 @@
+<style>
+  .run-widget-text {
+    text-align: center;
+  }
+  
+  .run-widget-data{
+   font-weight: bold; 
+  }
+  </style>
+  
+  <div class="well well-with-label">
+  
+    <span class="well-label">Tooling Options</span>
+  
+  
+    <div class="row-fluid">
+      <div class="span12" style="display: flex">
+        <span style="width: 55%; display: flex; margin-top: 12px;">
+          <!--M6 Tool Probe-->
+          <span style="border: none; width: 55%;">
+            <label for="m6ToolProbe_toggle_cb"><h5>M6 Tool Probe:</h5></label>
+          </span>
+          <span style="width: 45%;">
+            <span id="m6ToolProbe_toggle" class="switch" data-on="success" data-off="primary" data-bind="event: { 'switch-change': setM6ToolProbe }" style="top: 5px">
+            <input id="m6ToolProbe_toggle_cb" type="checkbox"> </span>
+          </span>
+        </span>
+        <span style="width: 45%; padding-left: 5px; font-size: 12px; border-left: 1px solid #CCC; float: left;">
+          Changing this setting will cause the UI to disconnect for a minute as Rockhopper and LinuxCNC restart.
+        </span>
+      </div>
+    </div>
+  
+  </div>
+  
