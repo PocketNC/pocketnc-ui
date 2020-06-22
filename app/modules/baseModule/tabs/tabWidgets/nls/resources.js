@@ -131,6 +131,7 @@ define({
         "VersionLabel" : "Software Version",
         "HardwareVersionLabel" : "Hardware Version",
         "CheckForUpdates" : "Check For Updates",
+        "CheckFileForUpdates" : "Check File For Updates",
 
         "RefreshSystemStatus" : "Refresh System Status",
         "DiskUsage" : "Disk Usage",

@@ -319,6 +319,11 @@ define(function(require) {
                 self.settings.persist.PressureUnits.Scratch(newval);
             }
         });
+	this.advancedSoftwareUpdatePaneOpen = ko.observable(false);
+	this.requireValidSignature = ko.observable(true);
+	this.toggleRequireSignature = function() {
+	  this.requireValidSignature(!this.requireValidSignature());
+	};
 
         this.getTemperatureUnitValue = ko.computed(
         {
