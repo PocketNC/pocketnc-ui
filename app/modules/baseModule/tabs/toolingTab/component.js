@@ -6,16 +6,19 @@ define(function(require) {
     var ViewModel = require('./viewmodel');
     var ViewModel_dro = require('../tabWidgets/viewmodel_dro');
     var ViewModel_work = require('../tabWidgets/viewmodel_workOffsets.js');
+    var ViewModel_options = require('../tabWidgets/viewmodel_toolingOptions.js');
     var ViewModel_tooling = require('../tabWidgets/viewmodel_tooling');
 
     var Component = function(moduleContext) {
 		var panel = null;
         var panel_dro = null;
         var panel_work = null;
+        var panel_options = null;
         var panel_tooling = null;
         var vm = null;
         var vm_dro = null;
         var vm_work = null;
+        var vm_options = null;
         var vm_tooling = null;
 
 		return {
@@ -47,6 +50,13 @@ define(function(require) {
                     ko.applyBindings( vm_tooling, panel_tooling.getDomElement());
                 }
                 vm_tooling.initialize(panel_tooling);
+
+                if (!panel_options) {
+                  vm_options = new ViewModel_options(moduleContext);
+                  panel_options = new Boiler.ViewTemplate(panel.getJQueryElement().find("#TOOLING_OPTIONS_PANEL"), vm_options.getTemplate(), vm_options.getNls());
+                  ko.applyBindings( vm_options, panel_options.getDomElement());
+                }
+                vm_options.initialize(panel_options);
 
                 panel.show();
 
