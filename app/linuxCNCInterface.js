@@ -67,6 +67,7 @@ define(function (require) {
 
     lcncsvr.vars = {};
     lcncsvr.vars.client_config = { data: ko.observable({invalid:true}), watched: true, convert_to_json: true };
+    lcncsvr.vars.config_overlay = { data: ko.observable(), watched: true };
     lcncsvr.vars.linear_units = { data: ko.observable(1), watched: true };
     lcncsvr.vars.program_units = { data: ko.observable(0), watched: true };
     lcncsvr.vars["halpin_halui.max-velocity.value"] = { data: ko.observable("1"), watched: true };
@@ -584,6 +585,11 @@ define(function (require) {
     lcncsvr.setOptionalStop = function( onoff )
     {
         lcncsvr.sendCommand("set_optional_stop","set_optional_stop",[onoff]);
+    }
+
+    lcncsvr.setM6ToolProbe = function( onoff )
+    {
+        lcncsvr.sendCommand("set_m6_tool_probe","set_m6_tool_probe",[onoff]);
     }
 
     lcncsvr.machinePower = function( onoff )

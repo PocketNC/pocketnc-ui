@@ -1,0 +1,19 @@
+<div class="well well-with-label">
+
+  <span class="well-label">Tooling Options</span>
+
+
+  <div class="row-fluid">
+    <div class="span12" style="display: flex;">
+      <span style="width: 55%; margin-bottom: 12px; margin-left: 12px;  ">
+        <!--M6 Tool Probe-->
+        <label for="m6ToolProbe_toggle_cb"><h5 data-bind="attr: { title: m6Info }" style="width: fit-content; border-bottom: 1px dotted #178acc;">Tool Probe on M6</h5></label>
+        <span id="m6ToolProbe_toggle" class="switch" data-on="success" data-off="primary" data-bind="event: { 'switch-change': setM6ToolProbeLocal }"  >
+        <input id="m6ToolProbe_toggle_cb" type="checkbox"> </span>
+      </span>
+        <button class="btn xbtn-primary" style="position: relative; top: 19px; margin: auto; display: block;" data-bind="click: setM6ToolProbeActual, enable: isM6LocalDifferent">
+          Restart to Apply Change
+        </button>
+    </div>
+  </div>
+</div>
