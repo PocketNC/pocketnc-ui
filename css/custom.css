@@ -586,6 +586,17 @@ form {
   width: 15ex;
   min-width: 15ex;
 }
+.axis-offset-td {
+  width: 15px;
+
+}
+.axis-offset {
+  cursor: help;
+  font-weight: bold;
+  font-size: 8px;
+  line-height: 8px;
+  height: 8px;
+}
 .width-axis-label {
   width: 3ex;
   max-width: 4ex;

@@ -31,7 +31,7 @@ define(function(require) {
                     stretchH: "all",
                     rowHeaders: true,
                     //colHeaders: ["Tool Number", "Z Offset", "X Offset", "Diameter", "Front Angle", "Back Angle", "Orientation"],
-                    colHeaders: [ "Z Offset", "Diameter", "Description", "" ],
+                    colHeaders: [ "TLO", "Diameter", "Description", "" ],
                     height: 255,
                     startCols: 3,
                     outsideClickDeselects: false,
