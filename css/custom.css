@@ -586,6 +586,11 @@ form {
   width: 15ex;
   min-width: 15ex;
 }
+.axis-offsets-info {
+  position: absolute;
+  margin-left: 15px;
+  cursor: help;
+};
 .axis-offset-td {
   width: 15px;
 

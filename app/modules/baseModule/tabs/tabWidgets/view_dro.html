@@ -1,6 +1,6 @@
 <div class="well well-with-label">
 
-    <span class="well-label"><abbr title="{{nls.DROFullName}}">{{nls.DROTitle}}</abbr></span>
+    <span class="well-label"><div class="axis-offsets-info"><span class="icon-info-sign" title="Labels in this column indicate an offset is active for the given axis. When an offset is active, the listed position will be different than when the offset is not active. For example, Z is often different after running a program than after the first homing sequence of the machine due to an active tool length offset (TLO)."></span></div><abbr title="{{nls.DROFullName}}">{{nls.DROTitle}}</abbr></span>
 
     <table class="table table-condensed-no-border">
         <tbody data-bind="foreach:linuxCNCServer.AxesNumbers">
@@ -51,7 +51,7 @@
     <table class="table table-condensed-no-border">
         <tbody>
             <tr class="borderless-table">
-	        <td class="axis-offset-td"><div class="axis-offset"></div></td>
+	        <td class="axis-offset-td" style="width: 15px"><div class="axis-offset"> </div></td>
                 <td class="width-axis-label">
                     <label for="spindle_speed" 
                            class="label big-label span12 label-info" style="text-align: center;">S:</label>
