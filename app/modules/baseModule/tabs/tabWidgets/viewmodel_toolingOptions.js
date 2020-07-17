@@ -50,6 +50,10 @@ define(function(require) {
       return self.m6ToolProbeLocal() != self.m6ToolProbeActual();
     }, self);
 
+    self.isBoardRevV1 = ko.computed(function(){
+      return self.linuxCNCServer.vars.board_revision.data() == 'v1revH';
+    }, self);
+
     
     self.setM6ToolProbeLocal = function()
     {
