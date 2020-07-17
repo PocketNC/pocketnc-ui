@@ -131,6 +131,7 @@ define({
         "VersionLabel" : "Software Version",
         "HardwareVersionLabel" : "Hardware Version",
         "CheckForUpdates" : "Check For Updates",
+        "CheckFileForUpdates" : "Check File For Updates",
 
         "RefreshSystemStatus" : "Refresh System Status",
         "DiskUsage" : "Disk Usage",
@@ -193,8 +194,8 @@ define({
 
         "DialogClose" : "Close",
 
-        "ToolingTitle": "Tool Table"
-
+        "ToolingTitle": "Tool Table",
+        "M6Info" : "When enabled, the loaded tool will automatically be measured after a programmed tool change.\r\nApplying a change to this setting will cause the UI to disconnect for about one minute as Rockhopper and LinuxCNC restart.",
     }
 //    "sv" : true
 });

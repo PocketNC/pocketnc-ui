@@ -1,10 +1,15 @@
 <div class="well well-with-label">
 
-    <span class="well-label"><abbr title="{{nls.DROFullName}}">{{nls.DROTitle}}</abbr></span>
+    <span class="well-label"><div class="axis-offsets-info"><span class="icon-info-sign" title="Labels in this column indicate an offset is active for the given axis. When an offset is active, the listed position will be different than when the offset is not active. For example, Z is often different after running a program than after the first homing sequence of the machine due to an active tool length offset (TLO)."></span></div><abbr title="{{nls.DROFullName}}">{{nls.DROTitle}}</abbr></span>
 
     <table class="table table-condensed-no-border">
         <tbody data-bind="foreach:linuxCNCServer.AxesNumbers">
             <tr class="borderless-table">
+	        <td class="axis-offset-td">
+		    <div class="axis-offset"><span title="G54-G59 are extra coordinate systems that can be used for different operations in a G code program." data-bind="text: Math.abs($root.linuxCNCServer.vars.g5x_offsetDisplay.data()[$data]) > .00001 ? $root.linuxCNCServer.RmtG5xString : ''"></span></div>
+		    <div class="axis-offset"><span title="The G92 code is used to offset the current coordinate system. You can use the work offsets table to set and clear G92 in addition to the MDI interface." data-bind="text: Math.abs($root.linuxCNCServer.vars.g92_offsetDisplay.data()[$data]) > .00001 ? 'G92' : ''"></span></div>
+		    <div class="axis-offset"><span title="The G43 code is used to load the tool length offset of a specific tool. When activated, the tool length offset is subtracted from the current machine position (along with any other offsets) to show the current work space position. The tool offset can be cancelled in the work offsets pane under Tooling, or G49 can be run in the MDI interface. By default, the machine is positioned at Z0 when the tool is fully retracted. With the tool length offset in place, Z0 should be the center of rotation of the machine." data-bind="text: Math.abs($root.linuxCNCServer.vars.tool_offsetDisplay.data()[$data]) > .00001 ? 'TLO' : ''"></span></div>
+		</td>
                 <td class="width-axis-label ">
                     <label data-bind="attr:{for: (($data).toString()+'droax') }, text: ($root.linuxCNCServer.axisNames)[$data]+':', click: $root.onDROFocus "
                            class="label big-label span12 label-info" style="text-align: center;"></label>
@@ -46,7 +51,8 @@
     <table class="table table-condensed-no-border">
         <tbody>
             <tr class="borderless-table">
-                <td class="width-axis-label ">
+	        <td class="axis-offset-td" style="width: 15px"><div class="axis-offset"> </div></td>
+                <td class="width-axis-label">
                     <label for="spindle_speed" 
                            class="label big-label span12 label-info" style="text-align: center;">S:</label>
                 </td>

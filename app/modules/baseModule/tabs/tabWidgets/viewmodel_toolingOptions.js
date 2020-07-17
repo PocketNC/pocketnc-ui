@@ -7,20 +7,21 @@ define(function(require) {
   var ViewModel = function(moduleContext) {
 
     var self = this;
-        self.Panel = null;
-        self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
-        self.settings = moduleContext.getSettings();
+    self.Panel = null;
+    self.linuxCNCServer = moduleContext.getSettings().linuxCNCServer;
+    self.settings = moduleContext.getSettings();
 
-        self.nextUniqueElementID = ko.observable(Date.now());
+    this.getTemplate = function()
+    {
+        return template;
+    }
+    this.getNls = function()
+    {
+        return nls;
+    }
 
-        this.getTemplate = function()
-        {
-            return template;
-        }
-        this.getNls = function()
-        {
-            return nls;
-        }
+    this.m6ToolProbeActual = ko.observable(0); 
+    this.m6ToolProbeLocal = ko.observable(0); 
 
     this.initialize = function( Panel ) {
         if (self.Panel == null)
@@ -33,19 +34,31 @@ define(function(require) {
             {
                 for (let i = 0; i < newVal.parameters.length; i++ ) {
                   let values = newVal.parameters[i].values;
-                  console.log(values);
                   if(values.name == "M6_TOOL_PROBE"){
-                    console.log('in here');
-                    $(self.Panel.getJQueryElement()).find('#m6ToolProbe_toggle').bootstrapSwitch('setState',Number(newVal.parameters[i].values.value));
+                    self.m6ToolProbeActual( Number(values.value) );
+                    self.m6ToolProbeLocal( Number(values.value) );
+                    $(self.Panel.getJQueryElement()).find('#m6ToolProbe_toggle').bootstrapSwitch('setState',Number(values.value));
                   }
                 }
             });
         }
     };
 
-    self.setM6ToolProbe = function()
+    self.m6Info = nls.M6Info;
+
+    self.isM6LocalDifferent = ko.computed(function(){
+      return self.m6ToolProbeLocal() != self.m6ToolProbeActual();
+    }, self);
+
+    
+    self.setM6ToolProbeLocal = function()
     {
-        self.linuxCNCServer.setM6ToolProbe( $( '#m6ToolProbe_toggle', self.Panel.getJQueryElement() ).bootstrapSwitch('status'));
+      self.m6ToolProbeLocal( $( '#m6ToolProbe_toggle', self.Panel.getJQueryElement() ).bootstrapSwitch('status') );
+    };
+
+    self.setM6ToolProbeActual = function()
+    {
+      self.linuxCNCServer.setM6ToolProbe( $( '#m6ToolProbe_toggle', self.Panel.getJQueryElement() ).bootstrapSwitch('status'));
     };
 
   };

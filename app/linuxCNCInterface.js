@@ -96,6 +96,7 @@ define(function (require) {
     lcncsvr.TemperatureUnits = ko.observable("F");
 
 
+    lcncsvr.CheckingUSBFileForUpdates = ko.observable(false);
     lcncsvr.CheckingForUpdates = ko.observable(false);
     lcncsvr.SettingVersion = ko.observable(false);
 
@@ -273,8 +274,10 @@ define(function (require) {
     lcncsvr.vars.usb_detected = { data: ko.observable(false), watched: true };
     lcncsvr.vars.usb_detected.data.subscribe(function (newval) {
       lcncsvr.request_usb_map();
+      lcncsvr.request_usb_software_files();
     });
     lcncsvr.vars.usb_map = { data: ko.observable(""), watched: false };
+    lcncsvr.vars.usb_software_files = { data: ko.observable([]), watched: false };
     lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
     lcncsvr.vars.rtc_seconds = { data: ko.observable(0), watched: true };
     lcncsvr.vars.rotary_motion_only = {data: ko.observable(false), watched: true };
@@ -309,6 +312,15 @@ define(function (require) {
     lcncsvr.vars.dogtag = { data: ko.observable(""), watched: false };
     lcncsvr.vars.system_status = { data: ko.observable(""), watched: false };
     
+    lcncsvr.strippedSoftwareNames = ko.computed(function() {
+      return lcncsvr.vars.usb_software_files.data().map(function(file) {
+//	return file;
+	return {
+	  label: file.replace(/^pocketnc-/, '').replace(/.p$/, ''),
+	  value: file
+	};
+      });
+    });
     lcncsvr.filteredVersions = ko.computed(function() {
         var versions = lcncsvr.vars.versions.data();
         var boardRev = lcncsvr.vars.board_revision.data();
@@ -660,6 +672,10 @@ define(function (require) {
 
     lcncsvr.request_usb_map = function(){
       lcncsvr.socket.send(JSON.stringify({"id": "usb_map", "command": "get", "name": "usb_map "}));
+    }
+
+    lcncsvr.request_usb_software_files = function(){
+      lcncsvr.socket.send(JSON.stringify({"id": "usb_software_files", "command": "get", "name": "usb_software_files"}));
     }
     
     lcncsvr.eject_usb = function(){
@@ -1095,6 +1111,12 @@ define(function (require) {
         lcncsvr.sendCommand("clear_error","clear_error",[]);
     }
 
+    lcncsvr.check_usb_file_for_updates = function(file, require_valid_signature) {
+      lcncsvr.usbCheckingFile(true);
+      lcncsvr.usbUpdateError("");
+      lcncsvr.usbUpdateSuccess("");
+      lcncsvr.sendCommandWhenReady("check_usb_file_for_updates", "check_usb_file_for_updates", [ file, require_valid_signature ]);
+    };
     lcncsvr.check_for_updates = function() {
         lcncsvr.CheckingForUpdates(true);
         lcncsvr.sendCommandWhenReady("check_for_updates", "check_for_updates");
@@ -1287,6 +1309,9 @@ define(function (require) {
         } catch(ex) {}
     }
     lcncsvr.hbCheckIntervalID = setInterval( lcncsvr.checkHB, lcncsvr.serverReconnectCheckInterval );
+    lcncsvr.usbUpdateError = ko.observable("");
+    lcncsvr.usbUpdateSuccess = ko.observable("");
+    lcncsvr.usbCheckingFile = ko.observable(false);
 
     // throttle the actual position updates
     lcncsvr.updateActualPosition = _.throttle( function(newVal){ lcncsvr.vars.actual_position.data(newVal); } , 125)
@@ -1329,6 +1354,20 @@ define(function (require) {
                     if(data.data.notify){
                       lcncsvr.notifyFromServer(data.data.notify);
                     }
+
+		    if(data.id == "check_usb_file_for_updates") {
+		      if(data.code == "?OK") {
+			if(data.data != "?OK") { // initial command returns an immediate response with data == "?OK"
+			  lcncsvr.usbCheckingFile(false);
+			  // we only want to response to the updated versions response
+			  lcncsvr.vars.versions.data(data.data);
+			  lcncsvr.usbUpdateSuccess("Successfully fetched versions from file. Select a version from the list above and click Save to update.");
+			}
+		      } else {
+			lcncsvr.usbCheckingFile(false);
+			lcncsvr.usbUpdateError(data.data);
+		      }
+		    }
 
                     if (data.code != "?OK") {
                         console.debug("WEBSOCKET: ERROR code returned " + msg.data);

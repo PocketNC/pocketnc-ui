@@ -438,6 +438,28 @@
                             <button id="saving_version_button" class="btn" data-bind="disable: linuxCNCServer.SettingVersion, click: function() { saveVersion() }">{{nls.Save}}</button> <span id="saving_version"></span>
                             <span data-bind='style: { display: linuxCNCServer.SettingVersion() ? "inline-block" : "none" }'><i class="icon icon-spinner icon-spin"></i></span>
                         </div>
+		        <div data-bind='style: { display: linuxCNCServer.vars.usb_software_files.data().length > 0 ? "block" : "none" }'>
+			  <div class="controls">
+			    <h5>Software Files Detected on USB</h5>
+			    <select data-bind="options: linuxCNCServer.strippedSoftwareNames(), optionsText: 'label', optionsValue: 'value'" class="" id="usb_software_file" multiple="false">
+			    </select>
+			  </div>
+			  <div class="controls">
+			    <span data-bind='style: { display: linuxCNCServer.usbCheckingFile() ? "inline-block" : "none" }'><i class="icon icon-spinner icon-spin"></i></span>
+			    <button class="btn" data-bind="disable: linuxCNCServer.usbCheckingFile, click: function() { linuxCNCServer.check_usb_file_for_updates(document.getElementById('usb_software_file').value, requireValidSignature()) }">{{nls.CheckFileForUpdates}}</button>
+			  </div>
+			  <div class="controls"><span style="color: red" data-bind="text: linuxCNCServer.usbUpdateError"></span></div>
+			  <div class="controls"><span style="color: rgb(90, 156, 59)" data-bind="text: linuxCNCServer.usbUpdateSuccess"></span></div>
+			  <div class="controls">
+			    <h6 data-bind="click: function() { advancedSoftwareUpdatePaneOpen(!advancedSoftwareUpdatePaneOpen()); }">Advanced<span data-bind="text: advancedSoftwareUpdatePaneOpen() ? '' : ' >>'"></span></h6>
+			    
+			  </div>
+			  <div class="controls" data-bind="style: { display: advancedSoftwareUpdatePaneOpen() ? 'block' : 'none' }">
+			  <span title="When ON, software files found on the USB must be properly signed with a valid Pocket NC signature, which ensures the file was created by Pocket NC and was not tampered with. When OFF, files signed by 3rd parties or expired Pocket NC signatures are allowed, which may pose a security risk.">Require valid Pocket NC signature</span>
+			  <span id="require_valid_signature_usb" class="switch" data-on="success" data-off="primary" data-bind="event: { 'switch-change': toggleRequireSignature }">
+			  <input id="require_valid_signature_usb_cb" type="checkbox" checked/></span>
+			  </div>
+		        </div>
                     </div>
 
                     <div class="control-group">
