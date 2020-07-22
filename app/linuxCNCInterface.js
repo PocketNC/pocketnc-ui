@@ -278,7 +278,7 @@ define(function (require) {
     });
     lcncsvr.vars.usb_map = { data: ko.observable(""), watched: false };
     lcncsvr.vars.usb_software_files = { data: ko.observable([]), watched: false };
-    lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true, indexed:true, max_index:54 };
+    lcncsvr.vars.tool_table = {data: ko.observableArray([]), watched: true };
     lcncsvr.vars.rtc_seconds = { data: ko.observable(0), watched: true };
     lcncsvr.vars.rotary_motion_only = {data: ko.observable(false), watched: true };
     lcncsvr.vars.halsig_interlockClosed = { data: ko.observable(true), watched: true, requiresFeature: 'INTERLOCK' };
@@ -302,8 +302,8 @@ define(function (require) {
     lcncsvr.settings = ko.observable({});
 
     lcncsvr.vars.axis_mask = { data: ko.observable(0), watched: true };
-    lcncsvr.vars.backplot_async = { data: ko.observable(""), watched: false, convert_to_json: true, local:true };
-    lcncsvr.vars.file.data.subscribe( function(newval){ lcncsvr.socket.send(JSON.stringify({"id": "backplot_async", "command": "get", "name": "backplot_async"})); });
+//    lcncsvr.vars.backplot_async = { data: ko.observable(""), watched: false, convert_to_json: true, local:true };
+//    lcncsvr.vars.file.data.subscribe( function(newval){ lcncsvr.socket.send(JSON.stringify({"id": "backplot_async", "command": "get", "name": "backplot_async"})); });
     lcncsvr.vars.file_content = { data: ko.observableArray([]), watched: false, local:true };
 
     lcncsvr.vars.versions = { data: ko.observableArray([]), watched: false }; 
@@ -356,7 +356,7 @@ define(function (require) {
         {
             console.log("SERVER_LOGGED_IN: " + newval);
             lcncsvr.vars.file.data("");
-            lcncsvr.vars.backplot_async.data("");
+//            lcncsvr.vars.backplot_async.data("");
         }
     });
 
@@ -1198,6 +1198,7 @@ define(function (require) {
             lcncsvr.vars.file_content.data.valueHasMutated();
     }
 
+/*
     lcncsvr.sendBackplotRequestOrNotify = function () {
         var x;
         if (typeof(lcncsvr.vars.backplot_async.data()) == "string")
@@ -1205,6 +1206,7 @@ define(function (require) {
         else
             lcncsvr.vars.backplot_async.data.valueHasMutated();
     }
+    */
 
     lcncsvr.deleteFile = function(filename) {
         lcncsvr.setRmtMode(lcncsvr.TASK_MODE_MDI);
