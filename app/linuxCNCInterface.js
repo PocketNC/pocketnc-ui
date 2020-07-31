@@ -66,7 +66,7 @@ define(function (require) {
     });
 
     lcncsvr.vars = {};
-    lcncsvr.vars.client_config = { data: ko.observable({invalid:true}), watched: true, convert_to_json: true };
+    lcncsvr.vars.client_config = { data: ko.observable({invalid:true}), watched: true };
     lcncsvr.vars.config_overlay = { data: ko.observable(), watched: true };
     lcncsvr.vars.linear_units = { data: ko.observable(1), watched: true };
     lcncsvr.vars.program_units = { data: ko.observable(0), watched: true };
@@ -348,7 +348,6 @@ define(function (require) {
     }); 
 
     lcncsvr.vars.versions.data.subscribe( function(newval) {
-        lcncsvr.CheckingForUpdates(false);
     });
 
     lcncsvr.server_logged_in.subscribe( function(newval) {
@@ -1421,8 +1420,9 @@ define(function (require) {
 
                     var curID = data.id.split(":");
 
-                    if(data.id === "refresh_ui") {
-			window.location.reload(true);
+                    if(data.id === "check_for_updates" && data.data != "?OK") {
+                      lcncsvr.CheckingForUpdates(false);
+                      lcncsvr.vars.versions.data(data.data);
                     }
                     if (lcncsvr.vars.hasOwnProperty(curID[0])) {
                         if (lcncsvr.vars[curID[0]].indexed)
