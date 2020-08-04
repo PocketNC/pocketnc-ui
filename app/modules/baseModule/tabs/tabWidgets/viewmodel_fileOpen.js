@@ -100,11 +100,6 @@ define(function(require) {
 
                             self.updateProgress(nextIdx / self.newFile.size); 
                             if(nextIdx < self.newFile.size){
-                                isLastChunk = (nextIdx + self.chunkSize) > self.newFile.size;
-                                if( isLastChunk ){
-                                    self.linuxCNCServer.setRmtMode(self.linuxCNCServer.TASK_MODE_MDI);
-                                    self.linuxCNCServer.setRmtMode(self.linuxCNCServer.TASK_MODE_AUTO);
-                                }
                                 self.upload(nextIdx);
                             }
                             else{
@@ -114,6 +109,10 @@ define(function(require) {
                                 else
                                     newStatus = 'Succesfully uploaded ' + self.newFile.name;
                                 $.pnotify({title: "Success", text: newStatus, type: "success"});
+                                
+                                if(!lcncsvr.RmtRunning()) {
+                                  self.linuxCNCServer.openFile(msg.data);
+                                }
                                 
                                 setTimeout(function() { 
                                     self.toggleUploadDiv(false) 
