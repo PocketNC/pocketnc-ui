@@ -12,7 +12,7 @@ define(function(require) {
         self.mouseWheelBufferedEvents = 0;
         self.timerSet = false;
         self.mouseWheelCallback = function(event) {
-            var y = event.originalEvent.deltaY;
+            var y = event.deltaY;
             if(y > 0) {
                 self.mouseWheelBufferedEvents -= 1;
             } else if(y < 0) {
@@ -21,13 +21,9 @@ define(function(require) {
             if(!self.timerSet) {
                 self.mouseWheelTimer = setTimeout(function() {
                     var incr = self.step();
-                    if(self.selected_axis() <= 2) {
-                        //adjust jog increment appropriately for current display units if on linear axis
-                        incr = self.incr();
-                    }
-                    if(self.step() == 0) {
+                    if(incr == 0) {
                         if(self.selected_axis() > 2){
-                            incr = 1;
+                            incr = .1;
                         }
                         else{
                             incr = 0.01 / self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor();
@@ -46,9 +42,9 @@ define(function(require) {
 
         self.toggleMouseWheel = function() {
             if(self.mouseWheelOn) {
-                $("body").off('wheel', self.mouseWheelCallback);
+                document.body.removeEventListener("wheel", self.mouseWheelCallback, { passive: false });
             } else {
-                $("body").on('wheel', self.mouseWheelCallback);
+                document.body.addEventListener("wheel", self.mouseWheelCallback, { passive: false });
             }
             self.mouseWheelOn = !self.mouseWheelOn;
         };
@@ -120,7 +116,6 @@ define(function(require) {
 
         self.selectStep = function(step) {
             self.step(step);
-            console.log(step);
         };
 
         self.step_options = ko.observable(0);
@@ -211,9 +206,6 @@ define(function(require) {
             if(self.selected_axis() > 2) {
                 multiplier = 180;
             }
-            else{
-                incr = - self.incr()
-            }
             if(self.step() == 0) {
                 self.linuxCNCServer.jogCont(self.selected_axis(), -multiplier*self.linuxCNCServer.jog_speed_fast());
             } else {
@@ -235,9 +227,6 @@ define(function(require) {
             if(self.selected_axis() > 2) {
                 multiplier = 180;
             }
-            else{
-                incr = self.incr();
-            }
             if(self.step() == 0) {
                 self.linuxCNCServer.jogCont(self.selected_axis(), multiplier*self.linuxCNCServer.jog_speed_fast());
             } else {
@@ -245,10 +234,6 @@ define(function(require) {
             }
             event.preventDefault();
         };
-
-        self.incr = function(){
-            return (self.step() / self.linuxCNCServer.MachineUnitsToDisplayUnitsLinearScaleFactor());
-        }
 
         self.plus_released = function(data, event) {
             if(self.step() == 0) {
